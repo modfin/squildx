@@ -93,12 +93,11 @@ type testUser struct {
 }
 
 func TestSelectObjectBasic(t *testing.T) {
-	// CreatedAt is a struct (time.Time) so it gets skipped
 	q, _, err := New().SelectObject(testUser{}).From("users").Build()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	expected := "SELECT id, first_name, email FROM users"
+	expected := "SELECT id, first_name, email, created_at FROM users"
 	if q != expected {
 		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
 	}
@@ -110,7 +109,7 @@ func TestSelectObjectPointer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	expected := "SELECT id, first_name, email FROM users"
+	expected := "SELECT id, first_name, email, created_at FROM users"
 	if q != expected {
 		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
 	}
@@ -121,7 +120,7 @@ func TestSelectObjectTablePrefix(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	expected := "SELECT u.id, u.first_name, u.email FROM users u"
+	expected := "SELECT u.id, u.first_name, u.email, u.created_at FROM users u"
 	if q != expected {
 		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
 	}
@@ -176,19 +175,19 @@ func TestSelectObjectUnexportedSkipped(t *testing.T) {
 	}
 }
 
-func TestSelectObjectNestedStructSkipped(t *testing.T) {
+func TestSelectObjectNamedStructIncluded(t *testing.T) {
 	type Nested struct {
 		Val string
 	}
 	type row struct {
 		ID     int    `db:"id"`
-		Nested Nested // struct field, should be skipped
+		Nested Nested `db:"nested"` // named struct field, included as column
 	}
 	q, _, err := New().SelectObject(row{}).From("t").Build()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	expected := "SELECT id FROM t"
+	expected := "SELECT id, nested FROM t"
 	if q != expected {
 		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
 	}
@@ -215,7 +214,7 @@ func TestSelectObjectAppendWithSelect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	expected := "SELECT COUNT(*) AS total, id, first_name, email FROM users"
+	expected := "SELECT COUNT(*) AS total, id, first_name, email, created_at FROM users"
 	if q != expected {
 		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
 	}
@@ -251,8 +250,120 @@ func TestSelectObjectImmutability(t *testing.T) {
 	if q1 != "SELECT extra FROM users" {
 		t.Errorf("base was mutated: %s", q1)
 	}
-	expected := "SELECT extra, id, first_name, email FROM users"
+	expected := "SELECT extra, id, first_name, email, created_at FROM users"
 	if q2 != expected {
 		t.Errorf("withObj mismatch\n got: %s\nwant: %s", q2, expected)
+	}
+}
+
+func TestSelectObjectEmbeddedStruct(t *testing.T) {
+	type Base struct {
+		ID        int    `db:"id"`
+		CreatedBy string `db:"created_by"`
+	}
+	type row struct {
+		Base
+		Name string `db:"name"`
+	}
+	q, _, err := New().SelectObject(row{}).From("t").Build()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := "SELECT id, created_by, name FROM t"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestSelectObjectEmbeddedPointerStruct(t *testing.T) {
+	type Base struct {
+		ID        int    `db:"id"`
+		CreatedBy string `db:"created_by"`
+	}
+	type row struct {
+		*Base
+		Name string `db:"name"`
+	}
+	q, _, err := New().SelectObject(row{}).From("t").Build()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := "SELECT id, created_by, name FROM t"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestSelectObjectDeeplyNestedEmbed(t *testing.T) {
+	type C struct {
+		Z string `db:"z"`
+	}
+	type B struct {
+		C
+		Y string `db:"y"`
+	}
+	type A struct {
+		B
+		X string `db:"x"`
+	}
+	q, _, err := New().SelectObject(A{}).From("t").Build()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := "SELECT z, y, x FROM t"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestSelectObjectTimeField(t *testing.T) {
+	type row struct {
+		ID        int        `db:"id"`
+		CreatedAt time.Time  `db:"created_at"`
+		UpdatedAt *time.Time `db:"updated_at"`
+	}
+	q, _, err := New().SelectObject(row{}).From("t").Build()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := "SELECT id, created_at, updated_at FROM t"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestSelectObjectEmbeddedWithTablePrefix(t *testing.T) {
+	type Base struct {
+		ID int `db:"id"`
+	}
+	type row struct {
+		Base
+		Name string `db:"name"`
+	}
+	q, _, err := New().SelectObject(row{}, "t").From("things t").Build()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := "SELECT t.id, t.name FROM things t"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestSelectObjectNamedStructWithDash(t *testing.T) {
+	type Metadata struct {
+		Val string
+	}
+	type row struct {
+		ID       int      `db:"id"`
+		Metadata Metadata `db:"-"`
+	}
+	q, _, err := New().SelectObject(row{}).From("t").Build()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := "SELECT id FROM t"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
 	}
 }

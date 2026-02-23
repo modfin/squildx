@@ -39,15 +39,29 @@ func structColumns(obj any, table string) ([]string, error) {
 	}
 
 	var cols []string
+	collectColumns(t, table, &cols)
+	return cols, nil
+}
+
+func collectColumns(t reflect.Type, table string, cols *[]string) {
 	for i := range t.NumField() {
 		f := t.Field(i)
 		if !f.IsExported() {
 			continue
 		}
-		if f.Type.Kind() == reflect.Struct || (f.Type.Kind() == reflect.Ptr && f.Type.Elem().Kind() == reflect.Struct) {
+
+		ft := f.Type
+		for ft.Kind() == reflect.Ptr {
+			ft = ft.Elem()
+		}
+
+		// Anonymous (embedded) struct: recurse to flatten
+		if f.Anonymous && ft.Kind() == reflect.Struct {
+			collectColumns(ft, table, cols)
 			continue
 		}
 
+		// All other fields (including named structs like time.Time)
 		name := ""
 		for _, tag := range []string{"squildx", "db", "json"} {
 			if v, ok := f.Tag.Lookup(tag); ok {
@@ -71,9 +85,8 @@ func structColumns(obj any, table string) ([]string, error) {
 		if table != "" {
 			name = table + "." + name
 		}
-		cols = append(cols, name)
+		*cols = append(*cols, name)
 	}
-	return cols, nil
 }
 
 func (b *builder) RemoveSelect(columns ...string) Builder {
@@ -82,7 +95,7 @@ func (b *builder) RemoveSelect(columns ...string) Builder {
 	for _, c := range columns {
 		remove[c] = struct{}{}
 	}
-	filtered := cp.columns[:0]
+	filtered := make([]string, 0, len(cp.columns))
 	for _, c := range cp.columns {
 		if _, ok := remove[c]; !ok {
 			filtered = append(filtered, c)
