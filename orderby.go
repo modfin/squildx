@@ -1,7 +1,12 @@
 package squildx
 
-func (b *builder) OrderBy(exprs ...string) Builder {
+func (b *builder) OrderBy(expr string, values ...any) Builder {
 	cp := b.clone()
-	cp.orderBys = append(cp.orderBys, exprs...)
+	params, err := parseParams(expr, values)
+	if err != nil {
+		cp.err = err
+		return cp
+	}
+	cp.orderBys = append(cp.orderBys, paramClause{sql: expr, params: params})
 	return cp
 }

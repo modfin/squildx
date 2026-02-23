@@ -7,6 +7,6 @@ func (b *builder) Having(sql string, values ...any) Builder {
 		cp.err = err
 		return cp
 	}
-	cp.havings = append(cp.havings, whereClause{sql: sql, params: params})
+	cp.havings = append(cp.havings, paramClause{sql: sql, params: params})
 	return cp
 }

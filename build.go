@@ -70,8 +70,15 @@ func (b *builder) Build() (string, map[string]any, error) {
 	}
 
 	if len(b.orderBys) > 0 {
+		exprs := make([]string, len(b.orderBys))
+		for i, o := range b.orderBys {
+			exprs[i] = o.sql
+			if err := mergeParams(params, o.params); err != nil {
+				return "", nil, err
+			}
+		}
 		sb.WriteString(" ORDER BY ")
-		sb.WriteString(strings.Join(b.orderBys, ", "))
+		sb.WriteString(strings.Join(exprs, ", "))
 	}
 
 	if b.limit != nil {

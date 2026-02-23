@@ -12,7 +12,7 @@ const (
 
 type joinClause struct {
 	joinType joinType
-	clause   whereClause
+	clause   paramClause
 }
 
 func (b *builder) addJoin(jt joinType, sql string, values []any) *builder {
@@ -24,7 +24,7 @@ func (b *builder) addJoin(jt joinType, sql string, values []any) *builder {
 	}
 	cp.joins = append(cp.joins, joinClause{
 		joinType: jt,
-		clause:   whereClause{sql: sql, params: params},
+		clause:   paramClause{sql: sql, params: params},
 	})
 	return cp
 }
