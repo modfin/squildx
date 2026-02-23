@@ -41,3 +41,47 @@ if sortByName {
 
 query, params, err := q.Build()
 ```
+
+OrderBy with parameters:
+
+```go
+query, params, err := squildx.New().
+    Select("id", "title").
+    From("documents").
+    OrderBy("similarity(embedding, :query_vec) DESC", vec).
+    Build()
+
+// query:  SELECT id, title FROM documents ORDER BY similarity(embedding, :query_vec) DESC
+// params: map[query_vec:<vec>]
+```
+
+Where subqueries:
+
+```go
+// WHERE EXISTS
+sub := squildx.New().Select("1").From("orders").Where("orders.user_id = users.id")
+
+query, params, err := squildx.New().
+    Select("*").
+    From("users").
+    WhereExists(sub).
+    Build()
+
+// query: SELECT * FROM users WHERE EXISTS (SELECT 1 FROM orders WHERE orders.user_id = users.id)
+```
+
+```go
+// WHERE IN with parameters
+sub := squildx.New().Select("user_id").From("orders").Where("total > :min_total", 100)
+
+query, params, err := squildx.New().
+    Select("*").
+    From("users").
+    WhereIn("id", sub).
+    Build()
+
+// query:  SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE total > :min_total)
+// params: map[min_total:100]
+```
+
+Also available: `WhereNotExists` and `WhereNotIn`.

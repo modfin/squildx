@@ -20,13 +20,15 @@ go build ./...         # Build/check compilation
 Single-package library using the **immutable Builder pattern** — every method clones the builder before modifying, so partial queries can be safely reused.
 
 **Key types:**
-- `Builder` interface (`builder.go`) — public API with `Select`, `From`, `Where`, `InnerJoin`/`LeftJoin`/`RightJoin`/`FullJoin`, `OrderBy`, `Limit`, `Offset`, `Build`
+- `Builder` interface (`builder.go`) — public API with `Select`, `From`, `Where`, `WhereExists`/`WhereNotExists`/`WhereIn`/`WhereNotIn`, `InnerJoin`/`LeftJoin`/`RightJoin`/`FullJoin`/`CrossJoin`, `GroupBy`, `Having`, `OrderBy`, `Limit`, `Offset`, `Build`
 - `builder` struct (`builder.go`) — internal state; created via `New()`
-- `joinClause` / `paramClause` — internal clause representations
+- `joinClause` / `paramClause` — internal clause representations. Where subquery methods (`WhereExists`, `WhereIn`, etc.) use `paramClause.subQuery` to embed a nested `Builder`.
 - `Build()` (`build.go`) — assembles final SQL string and merged `map[string]any` params
 
 **Parameter system** (`params.go`): Named placeholders are extracted via regex, matched positionally against variadic `values ...any` args, and merged across all clauses at build time. Duplicate param names with different values produce `ErrDuplicateParam`.
 
 **Error handling**: Errors from parameter parsing are stored in the builder and only surfaced when `Build()` is called, allowing uninterrupted method chaining.
 
-**Code layout**: Each SQL clause (select, from, where, join, orderby, limit, offset) has its own file and corresponding `_test.go` file.
+**OrderBy with parameters**: `OrderBy` accepts named parameters (e.g., `OrderBy("similarity(embedding, :vec) DESC", vec)`), following the same parameter system as `Where`.
+
+**Code layout**: Each SQL clause (select, from, where, join, orderby, groupby, having, limit, offset) has its own file and corresponding `_test.go` file.
