@@ -1,11 +1,6 @@
 package squildx
 
-import (
-	"fmt"
-	"regexp"
-)
-
-var identRegex = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$`)
+import "fmt"
 
 func (b *builder) Where(sql string, values ...any) Builder {
 	cp := b.clone()
@@ -40,10 +35,6 @@ func (b *builder) WhereNotIn(column string, sub Builder) Builder {
 
 func addWhereInSubquery(b *builder, column, keyword string, sub Builder) *builder {
 	cp := b.clone()
-	if !identRegex.MatchString(column) {
-		cp.err = fmt.Errorf("%w: %q", ErrInvalidIdentifier, column)
-		return cp
-	}
 	cp.wheres = append(cp.wheres, paramClause{
 		subQuery:  sub,
 		subPrefix: fmt.Sprintf("%s %s", column, keyword),

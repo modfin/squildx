@@ -287,22 +287,6 @@ func TestWhereSubqueryImmutability(t *testing.T) {
 	}
 }
 
-func TestWhereInInvalidIdentifier(t *testing.T) {
-	sub := New().Select("id").From("orders")
-
-	_, _, err := New().Select("*").
-		From("users").
-		WhereIn("id; DROP TABLE users--", sub).
-		Build()
-
-	if err == nil {
-		t.Fatal("expected ErrInvalidIdentifier, got nil")
-	}
-	if !errors.Is(err, ErrInvalidIdentifier) {
-		t.Errorf("expected ErrInvalidIdentifier, got: %v", err)
-	}
-}
-
 func TestWhereInQualifiedColumn(t *testing.T) {
 	sub := New().Select("user_id").From("orders")
 
