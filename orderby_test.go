@@ -1,6 +1,7 @@
 package squildx
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -53,8 +54,8 @@ func TestOrderByParamMismatch(t *testing.T) {
 		OrderBy("similarity(embedding, :query_vec) DESC").
 		Build()
 
-	if err == nil {
-		t.Fatal("expected error for param count mismatch, got nil")
+	if !errors.Is(err, ErrParamMismatch) {
+		t.Fatalf("expected ErrParamMismatch, got: %v", err)
 	}
 }
 
