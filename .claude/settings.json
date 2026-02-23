@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go vet*)",
+      "Bash(go fmt*)",
+      "Bash(go build*)",
+      "Bash(go test*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "go fmt ./..."
+          }
+        ]
+      }
+    ]
+  }
+}
