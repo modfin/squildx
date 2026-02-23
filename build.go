@@ -1,7 +1,7 @@
 package squildx
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -37,8 +37,6 @@ func (b *builder) Build() (string, map[string]any, error) {
 		}
 	}
 
-	var whereParts []string
-
 	if len(b.wheres) > 0 {
 		ands := make([]string, len(b.wheres))
 		for i, w := range b.wheres {
@@ -47,12 +45,8 @@ func (b *builder) Build() (string, map[string]any, error) {
 				return "", nil, err
 			}
 		}
-		whereParts = append(whereParts, strings.Join(ands, " AND "))
-	}
-
-	if len(whereParts) > 0 {
 		sb.WriteString(" WHERE ")
-		sb.WriteString(strings.Join(whereParts, " AND "))
+		sb.WriteString(strings.Join(ands, " AND "))
 	}
 
 	if len(b.groupBys) > 0 {
@@ -81,11 +75,13 @@ func (b *builder) Build() (string, map[string]any, error) {
 	}
 
 	if b.limit != nil {
-		sb.WriteString(fmt.Sprintf(" LIMIT %d", *b.limit))
+		sb.WriteString(" LIMIT ")
+		sb.WriteString(strconv.FormatUint(*b.limit, 10))
 	}
 
 	if b.offset != nil {
-		sb.WriteString(fmt.Sprintf(" OFFSET %d", *b.offset))
+		sb.WriteString(" OFFSET ")
+		sb.WriteString(strconv.FormatUint(*b.offset, 10))
 	}
 
 	return sb.String(), params, nil

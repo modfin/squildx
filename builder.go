@@ -2,6 +2,7 @@ package squildx
 
 type Builder interface {
 	Select(columns ...string) Builder
+	RemoveSelect(columns ...string) Builder
 	From(table string) Builder
 	InnerJoin(sql string, values ...any) Builder
 	LeftJoin(sql string, values ...any) Builder
@@ -22,7 +23,6 @@ type builder struct {
 	from     string
 	joins    []joinClause
 	wheres   []whereClause
-	ors      []whereClause
 	groupBys []string
 	havings  []whereClause
 	orderBys []string
@@ -40,7 +40,6 @@ func (b *builder) clone() *builder {
 	cp.columns = copySlice(b.columns)
 	cp.joins = copySlice(b.joins)
 	cp.wheres = copySlice(b.wheres)
-	cp.ors = copySlice(b.ors)
 	cp.groupBys = copySlice(b.groupBys)
 	cp.havings = copySlice(b.havings)
 	cp.orderBys = copySlice(b.orderBys)
