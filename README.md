@@ -5,7 +5,7 @@ A Go SQL query builder for use with [sqlx](https://github.com/jmoiron/sqlx) usin
 ## Install
 
 ```bash
-go get squildx
+go get github.com/modfin/squildx
 ```
 
 ## Usage
