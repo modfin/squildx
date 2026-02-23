@@ -2,6 +2,7 @@ package squildx
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 )
 
@@ -25,7 +26,7 @@ func parseParams(sql string, values []any) (map[string]any, error) {
 func mergeParams(dst, src map[string]any) error {
 	for k, v := range src {
 		if existing, ok := dst[k]; ok {
-			if existing != v {
+			if !reflect.DeepEqual(existing, v) {
 				return fmt.Errorf("%w: %q", ErrDuplicateParam, k)
 			}
 		}
