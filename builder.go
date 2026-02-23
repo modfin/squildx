@@ -7,7 +7,10 @@ type Builder interface {
 	LeftJoin(sql string, values ...any) Builder
 	RightJoin(sql string, values ...any) Builder
 	FullJoin(sql string, values ...any) Builder
+	CrossJoin(sql string, values ...any) Builder
 	Where(sql string, values ...any) Builder
+	GroupBy(exprs ...string) Builder
+	Having(sql string, values ...any) Builder
 	OrderBy(exprs ...string) Builder
 	Limit(n uint64) Builder
 	Offset(n uint64) Builder
@@ -20,6 +23,8 @@ type builder struct {
 	joins    []joinClause
 	wheres   []whereClause
 	ors      []whereClause
+	groupBys []string
+	havings  []whereClause
 	orderBys []string
 	limit    *uint64
 	offset   *uint64
@@ -36,6 +41,8 @@ func (b *builder) clone() *builder {
 	cp.joins = copySlice(b.joins)
 	cp.wheres = copySlice(b.wheres)
 	cp.ors = copySlice(b.ors)
+	cp.groupBys = copySlice(b.groupBys)
+	cp.havings = copySlice(b.havings)
 	cp.orderBys = copySlice(b.orderBys)
 	return &cp
 }

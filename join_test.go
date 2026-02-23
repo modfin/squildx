@@ -44,6 +44,42 @@ func TestJoinWithParams(t *testing.T) {
 	assertParam(t, params, "order_status", "complete")
 }
 
+func TestCrossJoin(t *testing.T) {
+	q, _, err := New().
+		Select("*").
+		From("users u").
+		CrossJoin("colors c").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM users u CROSS JOIN colors c"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestCrossJoinWithParams(t *testing.T) {
+	q, params, err := New().
+		Select("*").
+		From("users u").
+		CrossJoin("(SELECT * FROM sizes WHERE active = :active) s", true).
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM users u CROSS JOIN (SELECT * FROM sizes WHERE active = :active) s"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "active", true)
+}
+
 func TestParamMismatchInJoin(t *testing.T) {
 	_, _, err := New().
 		Select("*").

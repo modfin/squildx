@@ -55,6 +55,26 @@ func (b *builder) Build() (string, map[string]any, error) {
 		sb.WriteString(strings.Join(whereParts, " AND "))
 	}
 
+	if len(b.groupBys) > 0 {
+		sb.WriteString(" GROUP BY ")
+		sb.WriteString(strings.Join(b.groupBys, ", "))
+	}
+
+	if len(b.havings) > 0 {
+		if len(b.groupBys) == 0 {
+			return "", nil, ErrHavingWithoutGroupBy
+		}
+		ands := make([]string, len(b.havings))
+		for i, h := range b.havings {
+			ands[i] = h.sql
+			if err := mergeParams(params, h.params); err != nil {
+				return "", nil, err
+			}
+		}
+		sb.WriteString(" HAVING ")
+		sb.WriteString(strings.Join(ands, " AND "))
+	}
+
 	if len(b.orderBys) > 0 {
 		sb.WriteString(" ORDER BY ")
 		sb.WriteString(strings.Join(b.orderBys, ", "))

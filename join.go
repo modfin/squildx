@@ -7,6 +7,7 @@ const (
 	leftJoin  joinType = "LEFT JOIN"
 	rightJoin joinType = "RIGHT JOIN"
 	fullJoin  joinType = "FULL JOIN"
+	crossJoin joinType = "CROSS JOIN"
 )
 
 type joinClause struct {
@@ -42,4 +43,8 @@ func (b *builder) RightJoin(sql string, values ...any) Builder {
 
 func (b *builder) FullJoin(sql string, values ...any) Builder {
 	return b.addJoin(fullJoin, sql, values)
+}
+
+func (b *builder) CrossJoin(sql string, values ...any) Builder {
+	return b.addJoin(crossJoin, sql, values)
 }
