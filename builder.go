@@ -59,6 +59,8 @@ func (b *builder) clone() *builder {
 }
 
 type paramClause struct {
-	sql    string
-	params map[string]any
+	sql       string
+	params    map[string]any
+	subQuery  Builder
+	subPrefix string
 }

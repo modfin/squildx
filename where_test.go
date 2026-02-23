@@ -206,6 +206,7 @@ func TestWhereSubqueryParamCollision(t *testing.T) {
 		t.Errorf("expected ErrDuplicateParam, got: %v", err)
 	}
 }
+
 func TestWhereSubqueryParamCollisionOk(t *testing.T) {
 	sub := New().Select("id").From("orders").Where("name = :name", "order_name")
 
@@ -283,5 +284,39 @@ func TestWhereSubqueryImmutability(t *testing.T) {
 	assertParam(t, params, "active", true)
 	if len(params) != 1 {
 		t.Errorf("expected 1 param, got %d", len(params))
+	}
+}
+
+func TestWhereInInvalidIdentifier(t *testing.T) {
+	sub := New().Select("id").From("orders")
+
+	_, _, err := New().Select("*").
+		From("users").
+		WhereIn("id; DROP TABLE users--", sub).
+		Build()
+
+	if err == nil {
+		t.Fatal("expected ErrInvalidIdentifier, got nil")
+	}
+	if !errors.Is(err, ErrInvalidIdentifier) {
+		t.Errorf("expected ErrInvalidIdentifier, got: %v", err)
+	}
+}
+
+func TestWhereInQualifiedColumn(t *testing.T) {
+	sub := New().Select("user_id").From("orders")
+
+	q, _, err := New().Select("*").
+		From("users").
+		WhereIn("users.id", sub).
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM users WHERE users.id IN (SELECT user_id FROM orders)"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
 	}
 }

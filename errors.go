@@ -9,4 +9,5 @@ var (
 	ErrParamMismatch        = errors.New("squildx: number of :name placeholders does not match number of values")
 	ErrHavingWithoutGroupBy = errors.New("squildx: HAVING requires a GROUP BY clause")
 	ErrNotAStruct           = errors.New("squildx: SelectObject requires a struct or pointer to struct")
+	ErrInvalidIdentifier    = errors.New("squildx: invalid SQL identifier")
 )

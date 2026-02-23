@@ -1,6 +1,7 @@
 package squildx
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -40,9 +41,20 @@ func (b *builder) Build() (string, map[string]any, error) {
 	if len(b.wheres) > 0 {
 		ands := make([]string, len(b.wheres))
 		for i, w := range b.wheres {
-			ands[i] = w.sql
-			if err := mergeParams(params, w.params); err != nil {
-				return "", nil, err
+			if w.subQuery != nil {
+				subSQL, subParams, err := w.subQuery.Build()
+				if err != nil {
+					return "", nil, err
+				}
+				ands[i] = fmt.Sprintf("%s (%s)", w.subPrefix, subSQL)
+				if err := mergeParams(params, subParams); err != nil {
+					return "", nil, err
+				}
+			} else {
+				ands[i] = w.sql
+				if err := mergeParams(params, w.params); err != nil {
+					return "", nil, err
+				}
 			}
 		}
 		sb.WriteString(" WHERE ")
