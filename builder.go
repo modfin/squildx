@@ -4,18 +4,29 @@ type Builder interface {
 	Select(columns ...string) Builder
 	SelectObject(obj any, table ...string) Builder
 	RemoveSelect(columns ...string) Builder
+
 	From(table string) Builder
+
 	InnerJoin(sql string, values ...any) Builder
 	LeftJoin(sql string, values ...any) Builder
 	RightJoin(sql string, values ...any) Builder
 	FullJoin(sql string, values ...any) Builder
 	CrossJoin(sql string, values ...any) Builder
+
 	Where(sql string, values ...any) Builder
+	WhereExists(sub Builder) Builder
+	WhereNotExists(sub Builder) Builder
+	WhereIn(column string, sub Builder) Builder
+	WhereNotIn(column string, sub Builder) Builder
+
 	GroupBy(exprs ...string) Builder
 	Having(sql string, values ...any) Builder
+
 	OrderBy(expr string, values ...any) Builder
+
 	Limit(n uint64) Builder
 	Offset(n uint64) Builder
+
 	Build() (string, map[string]any, error)
 }
 
@@ -48,6 +59,8 @@ func (b *builder) clone() *builder {
 }
 
 type paramClause struct {
-	sql    string
-	params map[string]any
+	sql       string
+	params    map[string]any
+	subQuery  Builder
+	subPrefix string
 }
