@@ -8,4 +8,5 @@ var (
 	ErrDuplicateParam       = errors.New("squildx: duplicate parameter with conflicting value")
 	ErrParamMismatch        = errors.New("squildx: number of :name placeholders does not match number of values")
 	ErrHavingWithoutGroupBy = errors.New("squildx: HAVING requires a GROUP BY clause")
+	ErrNotAStruct           = errors.New("squildx: SelectObject requires a struct or pointer to struct")
 )

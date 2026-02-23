@@ -2,6 +2,7 @@ package squildx
 
 type Builder interface {
 	Select(columns ...string) Builder
+	SelectObject(obj any, table ...string) Builder
 	RemoveSelect(columns ...string) Builder
 	From(table string) Builder
 	InnerJoin(sql string, values ...any) Builder
