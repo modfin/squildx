@@ -22,7 +22,7 @@ Single-package library using the **immutable Builder pattern** — every method 
 **Key types:**
 - `Builder` interface (`builder.go`) — public API with `Select`, `From`, `Where`, `InnerJoin`/`LeftJoin`/`RightJoin`/`FullJoin`, `OrderBy`, `Limit`, `Offset`, `Build`
 - `builder` struct (`builder.go`) — internal state; created via `New()`
-- `joinClause` / `whereClause` — internal clause representations
+- `joinClause` / `paramClause` — internal clause representations
 - `Build()` (`build.go`) — assembles final SQL string and merged `map[string]any` params
 
 **Parameter system** (`params.go`): Named placeholders are extracted via regex, matched positionally against variadic `values ...any` args, and merged across all clauses at build time. Duplicate param names with different values produce `ErrDuplicateParam`.

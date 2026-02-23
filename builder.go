@@ -13,7 +13,7 @@ type Builder interface {
 	Where(sql string, values ...any) Builder
 	GroupBy(exprs ...string) Builder
 	Having(sql string, values ...any) Builder
-	OrderBy(exprs ...string) Builder
+	OrderBy(expr string, values ...any) Builder
 	Limit(n uint64) Builder
 	Offset(n uint64) Builder
 	Build() (string, map[string]any, error)
@@ -23,10 +23,10 @@ type builder struct {
 	columns  []string
 	from     string
 	joins    []joinClause
-	wheres   []whereClause
+	wheres   []paramClause
 	groupBys []string
-	havings  []whereClause
-	orderBys []string
+	havings  []paramClause
+	orderBys []paramClause
 	limit    *uint64
 	offset   *uint64
 	err      error
@@ -45,4 +45,9 @@ func (b *builder) clone() *builder {
 	cp.havings = copySlice(b.havings)
 	cp.orderBys = copySlice(b.orderBys)
 	return &cp
+}
+
+type paramClause struct {
+	sql    string
+	params map[string]any
 }
