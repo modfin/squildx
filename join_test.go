@@ -211,6 +211,25 @@ func TestDoubleJoinLateralDistinctButEqual(t *testing.T) {
 	}
 }
 
+func TestDoubleJoinLateralBothErrored(t *testing.T) {
+	sub1 := New().Select("*") // missing From — will error on Build
+	sub2 := New().Select("*") // missing From — will error on Build
+
+	_, _, err := New().
+		Select("u.name", "recent.*").
+		From("users u").
+		LeftJoinLateral(sub1, "recent", "true").
+		LeftJoinLateral(sub2, "recent", "true").
+		Build()
+
+	if err == nil {
+		t.Fatal("expected ErrDuplicateJoin, got nil")
+	}
+	if !errors.Is(err, ErrDuplicateJoin) {
+		t.Errorf("expected ErrDuplicateJoin, got: %v", err)
+	}
+}
+
 func TestJoinWithParams(t *testing.T) {
 	q, params, err := New().
 		Select("*").
