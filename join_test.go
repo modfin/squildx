@@ -230,7 +230,10 @@ func TestLateralJoinSubqueryBuildError(t *testing.T) {
 		Build()
 
 	if err == nil {
-		t.Fatal("expected error from subquery Build, got nil")
+		t.Fatal("expected ErrNoFrom, got nil")
+	}
+	if !errors.Is(err, ErrNoFrom) {
+		t.Errorf("expected ErrNoFrom, got: %v", err)
 	}
 }
 

@@ -51,6 +51,9 @@ func New() Builder {
 	return &builder{}
 }
 
+// clone performs a shallow copy of the builder with fresh slices.
+// Fields containing Builder interfaces (e.g. subQuery in joinClause/paramClause)
+// are shared, which is safe because the Builder is immutable — every method clones before mutating.
 func (b *builder) clone() *builder {
 	cp := *b
 	cp.columns = copySlice(b.columns)

@@ -78,6 +78,8 @@ func (b *builder) LeftJoinLateral(sub Builder, alias string, on string, values .
 	return b.addJoinLateral(leftJoinLateral, sub, alias, on, values)
 }
 
+// CrossJoinLateral has no ON clause, so empty sql and nil values are passed through to
+// addJoinLateral where parseParams handles them as a no-op.
 func (b *builder) CrossJoinLateral(sub Builder, alias string) Builder {
 	return b.addJoinLateral(crossJoinLateral, sub, alias, "", nil)
 }
