@@ -46,6 +46,24 @@ func TestMultipleParamsInOneClause(t *testing.T) {
 	assertParam(t, params, "max", 65)
 }
 
+func TestSingleParamMultipleTimes(t *testing.T) {
+	q, params, err := New().Select("*").
+		From("article").
+		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", "test").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM article WHERE (title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "search", "test")
+}
+
 func TestWhereNoParams(t *testing.T) {
 	q, params, err := New().
 		Select("*").
@@ -285,6 +303,59 @@ func TestWhereSubqueryImmutability(t *testing.T) {
 	if len(params) != 1 {
 		t.Errorf("expected 1 param, got %d", len(params))
 	}
+}
+
+func TestReusedParamKeepsOrder(t *testing.T) {
+	q, params, err := New().Select("*").
+		From("article").
+		Where("(title ILIKE '%' || :search_1 || '%' OR text ILIKE '%' || :search_2 || '%' OR body ILIKE '%' || :search_1 || '%')", "first", "second").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM article WHERE (title ILIKE '%' || :search_1 || '%' OR text ILIKE '%' || :search_2 || '%' OR body ILIKE '%' || :search_1 || '%')"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "search_1", "first")
+	assertParam(t, params, "search_2", "second")
+}
+
+func TestReusedParamCrossClauseConflict(t *testing.T) {
+	_, _, err := New().Select("*").
+		From("article").
+		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", "first").
+		Where("body = :search", "second").
+		Build()
+
+	if err == nil {
+		t.Fatal("expected ErrDuplicateParam, got nil")
+	}
+	if !errors.Is(err, ErrDuplicateParam) {
+		t.Errorf("expected ErrDuplicateParam, got: %v", err)
+	}
+}
+
+func TestReusedParamCrossClauseSameValue(t *testing.T) {
+	q, params, err := New().Select("*").
+		From("article").
+		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", "same").
+		Where("body = :search", "same").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM article WHERE (title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%') AND body = :search"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "search", "same")
 }
 
 func TestWhereInQualifiedColumn(t *testing.T) {
