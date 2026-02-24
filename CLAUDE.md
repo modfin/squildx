@@ -20,7 +20,7 @@ go build ./...         # Build/check compilation
 Single-package library using the **immutable Builder pattern** — every method clones the builder before modifying, so partial queries can be safely reused.
 
 **Key types:**
-- `Builder` interface (`builder.go`) — public API with `Select`, `From`, `Where`, `WhereExists`/`WhereNotExists`/`WhereIn`/`WhereNotIn`, `InnerJoin`/`LeftJoin`/`RightJoin`/`FullJoin`/`CrossJoin`, `GroupBy`, `Having`, `OrderBy`, `Limit`, `Offset`, `Build`
+- `Builder` interface (`builder.go`) — public API with `Select`, `Distinct`, `From`, `Where`, `WhereExists`/`WhereNotExists`/`WhereIn`/`WhereNotIn`, `InnerJoin`/`LeftJoin`/`RightJoin`/`FullJoin`/`CrossJoin`, `InnerJoinLateral`/`LeftJoinLateral`/`CrossJoinLateral`, `GroupBy`, `Having`, `OrderBy`, `Limit`, `Offset`, `Build`
 - `builder` struct (`builder.go`) — internal state; created via `New()`
 - `joinClause` / `paramClause` — internal clause representations. Where subquery methods (`WhereExists`, `WhereIn`, etc.) use `paramClause.subQuery` to embed a nested `Builder`.
 - `Build()` (`build.go`) — assembles final SQL string and merged `map[string]any` params

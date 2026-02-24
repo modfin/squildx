@@ -85,3 +85,5 @@ query, params, err := squildx.New().
 ```
 
 Also available: `WhereNotExists` and `WhereNotIn`.
+
+Other features: `Distinct()`, `InnerJoinLateral`/`LeftJoinLateral`/`CrossJoinLateral`.
