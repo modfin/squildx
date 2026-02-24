@@ -80,6 +80,160 @@ func TestCrossJoinWithParams(t *testing.T) {
 	assertParam(t, params, "active", true)
 }
 
+func TestLeftJoinLateral(t *testing.T) {
+	sub := New().Select("*").From("orders o").Where("o.user_id = u.id").OrderBy("o.created_at DESC").Limit(3)
+
+	q, _, err := New().
+		Select("u.name", "recent.*").
+		From("users u").
+		LeftJoinLateral(sub, "recent", "true").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT u.name, recent.* FROM users u LEFT JOIN LATERAL (SELECT * FROM orders o WHERE o.user_id = u.id ORDER BY o.created_at DESC LIMIT 3) recent ON true"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestInnerJoinLateral(t *testing.T) {
+	sub := New().Select("*").From("orders o").Where("o.user_id = u.id").Limit(1)
+
+	q, _, err := New().
+		Select("u.name", "latest.*").
+		From("users u").
+		InnerJoinLateral(sub, "latest", "true").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT u.name, latest.* FROM users u INNER JOIN LATERAL (SELECT * FROM orders o WHERE o.user_id = u.id LIMIT 1) latest ON true"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestCrossJoinLateral(t *testing.T) {
+	sub := New().Select("*").From("generate_series(1, 3)")
+
+	q, _, err := New().
+		Select("u.name", "s.*").
+		From("users u").
+		CrossJoinLateral(sub, "s").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT u.name, s.* FROM users u CROSS JOIN LATERAL (SELECT * FROM generate_series(1, 3)) s"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestLateralJoinWithOnParams(t *testing.T) {
+	sub := New().Select("*").From("orders o").Where("o.user_id = u.id").Limit(3)
+
+	q, params, err := New().
+		Select("u.name", "recent.*").
+		From("users u").
+		LeftJoinLateral(sub, "recent", "recent.amount > :min", 100).
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT u.name, recent.* FROM users u LEFT JOIN LATERAL (SELECT * FROM orders o WHERE o.user_id = u.id LIMIT 3) recent ON recent.amount > :min"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "min", 100)
+}
+
+func TestLateralJoinWithSubqueryParams(t *testing.T) {
+	sub := New().Select("*").From("orders o").Where("o.status = :status", "active").Limit(3)
+
+	q, params, err := New().
+		Select("u.name", "recent.*").
+		From("users u").
+		LeftJoinLateral(sub, "recent", "true").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT u.name, recent.* FROM users u LEFT JOIN LATERAL (SELECT * FROM orders o WHERE o.status = :status LIMIT 3) recent ON true"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "status", "active")
+}
+
+func TestLateralJoinParamCollision(t *testing.T) {
+	sub := New().Select("*").From("orders o").Where("o.status = :status", "active")
+
+	_, _, err := New().
+		Select("*").
+		From("users u").
+		Where("u.status = :status", "inactive").
+		LeftJoinLateral(sub, "recent", "true").
+		Build()
+
+	if err == nil {
+		t.Fatal("expected ErrDuplicateParam, got nil")
+	}
+	if !errors.Is(err, ErrDuplicateParam) {
+		t.Errorf("expected ErrDuplicateParam, got: %v", err)
+	}
+}
+
+func TestLateralJoinCombinedWithRegularJoins(t *testing.T) {
+	sub := New().Select("*").From("orders o").Where("o.user_id = u.id").Limit(3)
+
+	q, params, err := New().
+		Select("u.name", "p.bio", "recent.*").
+		From("users u").
+		LeftJoin("profiles p ON p.user_id = u.id").
+		LeftJoinLateral(sub, "recent", "true").
+		Where("u.active = :active", true).
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT u.name, p.bio, recent.* FROM users u LEFT JOIN profiles p ON p.user_id = u.id LEFT JOIN LATERAL (SELECT * FROM orders o WHERE o.user_id = u.id LIMIT 3) recent ON true WHERE u.active = :active"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "active", true)
+}
+
+func TestLateralJoinSubqueryBuildError(t *testing.T) {
+	sub := New().Select("*") // missing From — will error on Build
+
+	_, _, err := New().
+		Select("u.name").
+		From("users u").
+		LeftJoinLateral(sub, "recent", "true").
+		Build()
+
+	if err == nil {
+		t.Fatal("expected error from subquery Build, got nil")
+	}
+}
+
 func TestParamMismatchInJoin(t *testing.T) {
 	_, _, err := New().
 		Select("*").

@@ -32,7 +32,25 @@ func (b *builder) Build() (string, map[string]any, error) {
 		sb.WriteString(" ")
 		sb.WriteString(string(j.joinType))
 		sb.WriteString(" ")
-		sb.WriteString(j.clause.sql)
+		if j.subQuery != nil {
+			subSQL, subParams, err := j.subQuery.Build()
+			if err != nil {
+				return "", nil, err
+			}
+			sb.WriteString("(")
+			sb.WriteString(subSQL)
+			sb.WriteString(") ")
+			sb.WriteString(j.alias)
+			if j.clause.sql != "" {
+				sb.WriteString(" ON ")
+				sb.WriteString(j.clause.sql)
+			}
+			if err := mergeParams(params, subParams); err != nil {
+				return "", nil, err
+			}
+		} else {
+			sb.WriteString(j.clause.sql)
+		}
 		if err := mergeParams(params, j.clause.params); err != nil {
 			return "", nil, err
 		}

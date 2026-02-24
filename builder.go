@@ -13,6 +13,10 @@ type Builder interface {
 	FullJoin(sql string, values ...any) Builder
 	CrossJoin(sql string, values ...any) Builder
 
+	InnerJoinLateral(sub Builder, alias string, on string, values ...any) Builder
+	LeftJoinLateral(sub Builder, alias string, on string, values ...any) Builder
+	CrossJoinLateral(sub Builder, alias string) Builder
+
 	Where(sql string, values ...any) Builder
 	WhereExists(sub Builder) Builder
 	WhereNotExists(sub Builder) Builder
