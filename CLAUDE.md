@@ -32,3 +32,7 @@ Single-package library using the **immutable Builder pattern** — every method 
 **OrderBy with parameters**: `OrderBy` accepts named parameters (e.g., `OrderBy("similarity(embedding, :vec) DESC", vec)`), following the same parameter system as `Where`.
 
 **Code layout**: Each SQL clause (select, from, where, join, orderby, groupby, having, limit, offset) has its own file and corresponding `_test.go` file.
+
+## Style Rules
+
+- **Never use `if/else` or `else if`**. Use `switch` statements instead for multi-branch logic, but only when absolutely necessary — prefer early returns or guard clauses to avoid branching altogether.

@@ -23,6 +23,10 @@ func (b *builder) Build() (string, map[string]any, error) {
 	var sb strings.Builder
 
 	sb.WriteString("SELECT ")
+
+	if b.distinct {
+		sb.WriteString("DISTINCT ")
+	}
 	sb.WriteString(strings.Join(b.columns, ", "))
 
 	sb.WriteString(" FROM ")

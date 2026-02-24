@@ -4,6 +4,7 @@ type Builder interface {
 	Select(columns ...string) Builder
 	SelectObject(obj any, table ...string) Builder
 	RemoveSelect(columns ...string) Builder
+	Distinct() Builder
 
 	From(table string) Builder
 
@@ -36,6 +37,7 @@ type Builder interface {
 
 type builder struct {
 	columns  []string
+	distinct bool
 	from     string
 	joins    []joinClause
 	wheres   []paramClause
