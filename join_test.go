@@ -71,10 +71,10 @@ func TestDoubleJoinWithConflictingParams(t *testing.T) {
 		Build()
 
 	if err == nil {
-		t.Fatal("expected ErrDuplicateParam, got nil")
+		t.Fatal("expected ErrDuplicateJoin, got nil")
 	}
-	if !errors.Is(err, ErrDuplicateParam) {
-		t.Errorf("expected ErrDuplicateParam, got: %v", err)
+	if !errors.Is(err, ErrDuplicateJoin) {
+		t.Errorf("expected ErrDuplicateJoin, got: %v", err)
 	}
 }
 
@@ -183,10 +183,31 @@ func TestDoubleJoinLateralConflictingSubquery(t *testing.T) {
 		Build()
 
 	if err == nil {
-		t.Fatal("expected ErrDuplicateParam, got nil")
+		t.Fatal("expected ErrDuplicateJoin, got nil")
 	}
-	if !errors.Is(err, ErrDuplicateParam) {
-		t.Errorf("expected ErrDuplicateParam, got: %v", err)
+	if !errors.Is(err, ErrDuplicateJoin) {
+		t.Errorf("expected ErrDuplicateJoin, got: %v", err)
+	}
+}
+
+func TestDoubleJoinLateralDistinctButEqual(t *testing.T) {
+	sub1 := New().Select("*").From("orders o").Where("o.user_id = u.id").Limit(3)
+	sub2 := New().Select("*").From("orders o").Where("o.user_id = u.id").Limit(3)
+
+	q, _, err := New().
+		Select("u.name", "recent.*").
+		From("users u").
+		LeftJoinLateral(sub1, "recent", "true").
+		LeftJoinLateral(sub2, "recent", "true").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT u.name, recent.* FROM users u LEFT JOIN LATERAL (SELECT * FROM orders o WHERE o.user_id = u.id LIMIT 3) recent ON true"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
 	}
 }
 
