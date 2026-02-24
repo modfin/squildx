@@ -27,6 +27,11 @@ func (b *builder) addJoin(jt joinType, sql string, values []any) *builder {
 		cp.err = err
 		return cp
 	}
+	for _, j := range cp.joins {
+		if j.joinType == jt && j.clause.sql == sql {
+			return cp
+		}
+	}
 	cp.joins = append(cp.joins, joinClause{
 		joinType: jt,
 		clause:   paramClause{sql: sql, params: params},

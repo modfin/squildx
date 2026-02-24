@@ -25,6 +25,24 @@ func TestJoinTypes(t *testing.T) {
 	}
 }
 
+func TestDoubleJoin(t *testing.T) {
+	q, _, err := New().
+		Select("*").
+		From("users u").
+		InnerJoin("orders o ON o.user_id = u.id").
+		InnerJoin("orders o ON o.user_id = u.id").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM users u INNER JOIN orders o ON o.user_id = u.id"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
 func TestJoinWithParams(t *testing.T) {
 	q, params, err := New().
 		Select("*").
