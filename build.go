@@ -24,12 +24,7 @@ func (b *builder) Build() (string, map[string]any, error) {
 
 	sb.WriteString("SELECT ")
 
-	switch {
-	case len(b.distinctOn) > 0:
-		sb.WriteString("DISTINCT ON (")
-		sb.WriteString(strings.Join(b.distinctOn, ", "))
-		sb.WriteString(") ")
-	case b.distinct:
+	if b.distinct {
 		sb.WriteString("DISTINCT ")
 	}
 	sb.WriteString(strings.Join(b.columns, ", "))

@@ -5,7 +5,6 @@ type Builder interface {
 	SelectObject(obj any, table ...string) Builder
 	RemoveSelect(columns ...string) Builder
 	Distinct() Builder
-	DistinctOn(columns ...string) Builder
 
 	From(table string) Builder
 
@@ -37,18 +36,17 @@ type Builder interface {
 }
 
 type builder struct {
-	columns    []string
-	distinct   bool
-	distinctOn []string
-	from       string
-	joins      []joinClause
-	wheres     []paramClause
-	groupBys   []string
-	havings    []paramClause
-	orderBys   []paramClause
-	limit      *uint64
-	offset     *uint64
-	err        error
+	columns  []string
+	distinct bool
+	from     string
+	joins    []joinClause
+	wheres   []paramClause
+	groupBys []string
+	havings  []paramClause
+	orderBys []paramClause
+	limit    *uint64
+	offset   *uint64
+	err      error
 }
 
 func New() Builder {
@@ -61,7 +59,6 @@ func New() Builder {
 func (b *builder) clone() *builder {
 	cp := *b
 	cp.columns = copySlice(b.columns)
-	cp.distinctOn = copySlice(b.distinctOn)
 	cp.joins = copySlice(b.joins)
 	cp.wheres = copySlice(b.wheres)
 	cp.groupBys = copySlice(b.groupBys)
