@@ -1,5 +1,10 @@
 package squildx
 
+import (
+	"fmt"
+	"reflect"
+)
+
 type joinType string
 
 const (
@@ -28,9 +33,14 @@ func (b *builder) addJoin(jt joinType, sql string, values []any) *builder {
 		return cp
 	}
 	for _, j := range cp.joins {
-		if j.joinType == jt && j.clause.sql == sql {
+		if j.joinType != jt || j.clause.sql != sql {
+			continue
+		}
+		if reflect.DeepEqual(j.clause.params, params) {
 			return cp
 		}
+		cp.err = fmt.Errorf("%w: join %s %s", ErrDuplicateParam, jt, sql)
+		return cp
 	}
 	cp.joins = append(cp.joins, joinClause{
 		joinType: jt,
@@ -64,6 +74,16 @@ func (b *builder) addJoinLateral(jt joinType, sub Builder, alias string, on stri
 	params, err := parseParams(on, values)
 	if err != nil {
 		cp.err = err
+		return cp
+	}
+	for _, j := range cp.joins {
+		if j.joinType != jt || j.alias != alias {
+			continue
+		}
+		if j.subQuery == sub && j.clause.sql == on && reflect.DeepEqual(j.clause.params, params) {
+			return cp
+		}
+		cp.err = fmt.Errorf("%w: lateral join %s %s", ErrDuplicateParam, jt, alias)
 		return cp
 	}
 	cp.joins = append(cp.joins, joinClause{
