@@ -27,6 +27,8 @@ Single-package library using the **immutable Builder pattern** — every method 
 
 **Parameter system** (`params.go`): Named placeholders are extracted via regex, matched positionally against variadic `values ...any` args, and merged across all clauses at build time. Duplicate param names with different values produce `ErrDuplicateParam`.
 
+**Duplicate join detection** (`join.go`): Adding the same join twice with identical parameters is silently deduplicated. Adding the same join target with conflicting clauses or parameters produces `ErrDuplicateJoin`. This applies to both regular joins and lateral joins.
+
 **Error handling**: Errors from parameter parsing are stored in the builder and only surfaced when `Build()` is called, allowing uninterrupted method chaining.
 
 **OrderBy with parameters**: `OrderBy` accepts named parameters (e.g., `OrderBy("similarity(embedding, :vec) DESC", vec)`), following the same parameter system as `Where`.
