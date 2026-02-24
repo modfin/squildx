@@ -22,7 +22,7 @@ func parseParams(sql string, values []any) (map[string]any, error) {
 	}
 
 	if len(unique) != len(values) {
-		return nil, fmt.Errorf("%w: got %d placeholder(s) but %d value(s)", ErrParamMismatch, len(unique), len(values))
+		return nil, fmt.Errorf("%w: got %d unique placeholder(s) but %d value(s)", ErrParamMismatch, len(unique), len(values))
 	}
 
 	params := make(map[string]any, len(unique))

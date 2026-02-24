@@ -324,6 +324,40 @@ func TestReusedParamKeepsOrder(t *testing.T) {
 	assertParam(t, params, "search_2", "second")
 }
 
+func TestReusedParamCrossClauseConflict(t *testing.T) {
+	_, _, err := New().Select("*").
+		From("article").
+		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", "first").
+		Where("body = :search", "second").
+		Build()
+
+	if err == nil {
+		t.Fatal("expected ErrDuplicateParam, got nil")
+	}
+	if !errors.Is(err, ErrDuplicateParam) {
+		t.Errorf("expected ErrDuplicateParam, got: %v", err)
+	}
+}
+
+func TestReusedParamCrossClauseSameValue(t *testing.T) {
+	q, params, err := New().Select("*").
+		From("article").
+		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", "same").
+		Where("body = :search", "same").
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM article WHERE (title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%') AND body = :search"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "search", "same")
+}
+
 func TestWhereInQualifiedColumn(t *testing.T) {
 	sub := New().Select("user_id").From("orders")
 
