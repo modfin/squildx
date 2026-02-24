@@ -52,9 +52,12 @@ func (b *builder) Build() (string, map[string]any, error) {
 			if err := mergeParams(params, subParams); err != nil {
 				return "", nil, err
 			}
-		} else {
-			sb.WriteString(j.clause.sql)
+			if err := mergeParams(params, j.clause.params); err != nil {
+				return "", nil, err
+			}
+			continue
 		}
+		sb.WriteString(j.clause.sql)
 		if err := mergeParams(params, j.clause.params); err != nil {
 			return "", nil, err
 		}
@@ -72,11 +75,11 @@ func (b *builder) Build() (string, map[string]any, error) {
 				if err := mergeParams(params, subParams); err != nil {
 					return "", nil, err
 				}
-			} else {
-				ands[i] = w.sql
-				if err := mergeParams(params, w.params); err != nil {
-					return "", nil, err
-				}
+				continue
+			}
+			ands[i] = w.sql
+			if err := mergeParams(params, w.params); err != nil {
+				return "", nil, err
 			}
 		}
 		sb.WriteString(" WHERE ")
