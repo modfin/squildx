@@ -10,7 +10,7 @@ func TestHavingBasic(t *testing.T) {
 		Select("department", "COUNT(*) AS cnt").
 		From("employees").
 		GroupBy("department").
-		Having("COUNT(*) > :min_count", 5).
+		Having("COUNT(*) > :min_count", map[string]any{"min_count": 5}).
 		Build()
 
 	if err != nil {
@@ -30,8 +30,8 @@ func TestHavingMultiple(t *testing.T) {
 		Select("department", "COUNT(*) AS cnt", "AVG(salary) AS avg_sal").
 		From("employees").
 		GroupBy("department").
-		Having("COUNT(*) > :min_count", 5).
-		Having("AVG(salary) > :min_salary", 50000).
+		Having("COUNT(*) > :min_count", map[string]any{"min_count": 5}).
+		Having("AVG(salary) > :min_salary", map[string]any{"min_salary": 50000}).
 		Build()
 
 	if err != nil {
@@ -51,7 +51,7 @@ func TestHavingWithoutGroupByError(t *testing.T) {
 	_, _, err := New().
 		Select("department", "COUNT(*)").
 		From("employees").
-		Having("COUNT(*) > :min_count", 5).
+		Having("COUNT(*) > :min_count", map[string]any{"min_count": 5}).
 		Build()
 
 	if !errors.Is(err, ErrHavingWithoutGroupBy) {
@@ -80,10 +80,57 @@ func TestHavingNoParams(t *testing.T) {
 	}
 }
 
+func TestHavingAtPrefix(t *testing.T) {
+	q, params, err := New().
+		Select("department", "COUNT(*) AS cnt").
+		From("employees").
+		GroupBy("department").
+		Having("COUNT(*) > @min_count", map[string]any{"min_count": 5}).
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT department, COUNT(*) AS cnt FROM employees GROUP BY department HAVING COUNT(*) > @min_count"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "min_count", 5)
+}
+
+func TestMixedPrefixWhereAndHaving(t *testing.T) {
+	_, _, err := New().
+		Select("department", "COUNT(*) AS cnt").
+		From("employees").
+		Where("active = :active", map[string]any{"active": true}).
+		GroupBy("department").
+		Having("COUNT(*) > @min_count", map[string]any{"min_count": 5}).
+		Build()
+
+	if !errors.Is(err, ErrMixedPrefix) {
+		t.Errorf("expected ErrMixedPrefix, got: %v", err)
+	}
+}
+
+func TestHavingMultipleParamMaps(t *testing.T) {
+	_, _, err := New().
+		Select("department", "COUNT(*) AS cnt").
+		From("employees").
+		GroupBy("department").
+		Having("COUNT(*) > :min_count", map[string]any{"min_count": 5}, map[string]any{"extra": 1}).
+		Build()
+
+	if !errors.Is(err, ErrMultipleParamMaps) {
+		t.Errorf("expected ErrMultipleParamMaps, got: %v", err)
+	}
+}
+
 func TestHavingImmutability(t *testing.T) {
 	base := New().Select("department", "COUNT(*)").From("employees").GroupBy("department")
 
-	withHaving := base.Having("COUNT(*) > :min_count", 5)
+	withHaving := base.Having("COUNT(*) > :min_count", map[string]any{"min_count": 5})
 
 	q1, _, err := base.Build()
 	if err != nil {

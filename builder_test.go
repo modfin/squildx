@@ -9,8 +9,8 @@ func TestFullAPIExample(t *testing.T) {
 		Select("u.name", "o.total").
 		From("users u").
 		InnerJoin("orders o ON o.user_id = u.id").
-		Where("age > :min_age", 18).
-		Where("active = :active", true).
+		Where("age > :min_age", map[string]any{"min_age": 18}).
+		Where("active = :active", map[string]any{"active": true}).
 		OrderBy("u.name ASC").
 		Limit(10).
 		Offset(20).
@@ -36,12 +36,12 @@ func TestFullAPIExample(t *testing.T) {
 func TestImmutability(t *testing.T) {
 	base := New().Select("*").From("users")
 
-	q1, _, err := base.Where("active = :active", true).Build()
+	q1, _, err := base.Where("active = :active", map[string]any{"active": true}).Build()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	q2, _, err := base.Where("role = :role", "admin").Build()
+	q2, _, err := base.Where("role = :role", map[string]any{"role": "admin"}).Build()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -64,10 +64,10 @@ func TestConditionalFiltering(t *testing.T) {
 
 	q := New().Select("*").From("users")
 	if f.Age != 0 {
-		q = q.Where("age = :age", f.Age)
+		q = q.Where("age = :age", map[string]any{"age": f.Age})
 	}
 	if f.Name != "" {
-		q = q.Where("name = :name", f.Name)
+		q = q.Where("name = :name", map[string]any{"name": f.Name})
 	}
 
 	sql, params, err := q.Build()

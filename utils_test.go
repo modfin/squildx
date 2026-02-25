@@ -57,8 +57,8 @@ func TestParamsEqual(t *testing.T) {
 
 func TestBuildersEqual(t *testing.T) {
 	t.Run("identical builders", func(t *testing.T) {
-		a := New().Select("*").From("users").Where("id = :id", 1)
-		b := New().Select("*").From("users").Where("id = :id", 1)
+		a := New().Select("*").From("users").Where("id = :id", map[string]any{"id": 1})
+		b := New().Select("*").From("users").Where("id = :id", map[string]any{"id": 1})
 		if !buildersEqual(a, b) {
 			t.Error("expected identical builders to be equal")
 		}
@@ -73,8 +73,8 @@ func TestBuildersEqual(t *testing.T) {
 	})
 
 	t.Run("different params", func(t *testing.T) {
-		a := New().Select("*").From("users").Where("id = :id", 1)
-		b := New().Select("*").From("users").Where("id = :id", 2)
+		a := New().Select("*").From("users").Where("id = :id", map[string]any{"id": 1})
+		b := New().Select("*").From("users").Where("id = :id", map[string]any{"id": 2})
 		if buildersEqual(a, b) {
 			t.Error("expected builders with different params to not be equal")
 		}

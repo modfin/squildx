@@ -41,6 +41,9 @@ func (b *builder) Build() (string, map[string]any, error) {
 			if err != nil {
 				return "", nil, err
 			}
+			if err := checkSubqueryPrefix(b.paramPrefix, j.subQuery); err != nil {
+				return "", nil, err
+			}
 			sb.WriteString("(")
 			sb.WriteString(subSQL)
 			sb.WriteString(") ")
@@ -69,6 +72,9 @@ func (b *builder) Build() (string, map[string]any, error) {
 			if w.subQuery != nil {
 				subSQL, subParams, err := w.subQuery.Build()
 				if err != nil {
+					return "", nil, err
+				}
+				if err := checkSubqueryPrefix(b.paramPrefix, w.subQuery); err != nil {
 					return "", nil, err
 				}
 				ands[i] = fmt.Sprintf("%s (%s)", w.subPrefix, subSQL)
@@ -129,4 +135,19 @@ func (b *builder) Build() (string, map[string]any, error) {
 	}
 
 	return sb.String(), params, nil
+}
+
+// checkSubqueryPrefix validates that a subquery's param prefix matches the parent's.
+func checkSubqueryPrefix(parentPrefix byte, sub Builder) error {
+	subBuilder, ok := sub.(*builder)
+	if !ok {
+		return nil
+	}
+	if parentPrefix == 0 || subBuilder.paramPrefix == 0 {
+		return nil
+	}
+	if parentPrefix != subBuilder.paramPrefix {
+		return ErrMixedPrefix
+	}
+	return nil
 }
