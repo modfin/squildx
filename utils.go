@@ -18,7 +18,7 @@ func valueEqual(a, b any) bool {
 	return reflect.DeepEqual(a, b)
 }
 
-func paramsEqual(a, b map[string]any) bool {
+func paramsEqual(a, b Params) bool {
 	if len(a) != len(b) {
 		return false
 	}
