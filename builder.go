@@ -72,6 +72,19 @@ func (b *builder) clone() *builder {
 	return &cp
 }
 
+// setPrefix records the detected parameter prefix (':' or '@') on the builder.
+// It returns ErrMixedPrefix if the builder already has a different prefix set.
+func (b *builder) setPrefix(prefix byte) error {
+	if prefix == 0 {
+		return nil
+	}
+	if b.paramPrefix != 0 && b.paramPrefix != prefix {
+		return ErrMixedPrefix
+	}
+	b.paramPrefix = prefix
+	return nil
+}
+
 type paramClause struct {
 	sql       string
 	params    Params

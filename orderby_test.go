@@ -94,16 +94,24 @@ func TestMixedPrefixWhereAndOrderBy(t *testing.T) {
 	}
 }
 
-func TestOrderByMultipleParamMaps(t *testing.T) {
-	_, _, err := New().
+func TestOrderByMultipleParamMapsMerged(t *testing.T) {
+	q, params, err := New().
 		Select("*").
 		From("documents").
-		OrderBy("similarity(embedding, :query_vec) DESC", Params{"query_vec": 1}, Params{"extra": 2}).
+		OrderBy("similarity(embedding, :query_vec) DESC, priority = :pri DESC", Params{"query_vec": 1}, Params{"pri": "high"}).
 		Build()
 
-	if !errors.Is(err, ErrMultipleParamMaps) {
-		t.Errorf("expected ErrMultipleParamMaps, got: %v", err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
+
+	expected := "SELECT * FROM documents ORDER BY similarity(embedding, :query_vec) DESC, priority = :pri DESC"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "query_vec", 1)
+	assertParam(t, params, "pri", "high")
 }
 
 func TestOrderByWithWhere(t *testing.T) {

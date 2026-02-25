@@ -12,12 +12,9 @@ func (b *builder) OrderBy(expr string, params ...Params) Builder {
 		cp.err = err
 		return cp
 	}
-	if prefix != 0 {
-		if cp.paramPrefix != 0 && cp.paramPrefix != prefix {
-			cp.err = ErrMixedPrefix
-			return cp
-		}
-		cp.paramPrefix = prefix
+	if err := cp.setPrefix(prefix); err != nil {
+		cp.err = err
+		return cp
 	}
 	cp.orderBys = append(cp.orderBys, paramClause{sql: expr, params: parsed})
 	return cp

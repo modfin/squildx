@@ -486,16 +486,24 @@ func TestMixedPrefixWhereAndJoin(t *testing.T) {
 	}
 }
 
-func TestJoinMultipleParamMaps(t *testing.T) {
-	_, _, err := New().
+func TestJoinMultipleParamMapsMerged(t *testing.T) {
+	q, params, err := New().
 		Select("*").
 		From("users u").
-		InnerJoin("orders o ON o.status = :status", Params{"status": "active"}, Params{"extra": 1}).
+		InnerJoin("orders o ON o.user_id = u.id AND o.status = :status AND o.type = :otype", Params{"status": "active"}, Params{"otype": "retail"}).
 		Build()
 
-	if !errors.Is(err, ErrMultipleParamMaps) {
-		t.Errorf("expected ErrMultipleParamMaps, got: %v", err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
+
+	expected := "SELECT * FROM users u INNER JOIN orders o ON o.user_id = u.id AND o.status = :status AND o.type = :otype"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "status", "active")
+	assertParam(t, params, "otype", "retail")
 }
 
 func TestLateralJoinAtPrefixOnParams(t *testing.T) {
@@ -534,16 +542,24 @@ func TestLateralJoinSubqueryMixedPrefix(t *testing.T) {
 	}
 }
 
-func TestLateralJoinMultipleParamMaps(t *testing.T) {
+func TestLateralJoinMultipleParamMapsMerged(t *testing.T) {
 	sub := New().Select("*").From("orders o").Where("o.user_id = u.id").Limit(3)
 
-	_, _, err := New().
+	q, params, err := New().
 		Select("u.name", "recent.*").
 		From("users u").
-		LeftJoinLateral(sub, "recent", "recent.amount > :min", Params{"min": 100}, Params{"extra": 1}).
+		LeftJoinLateral(sub, "recent", "recent.amount > :min AND recent.status = :rstatus", Params{"min": 100}, Params{"rstatus": "shipped"}).
 		Build()
 
-	if !errors.Is(err, ErrMultipleParamMaps) {
-		t.Errorf("expected ErrMultipleParamMaps, got: %v", err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
+
+	expected := "SELECT u.name, recent.* FROM users u LEFT JOIN LATERAL (SELECT * FROM orders o WHERE o.user_id = u.id LIMIT 3) recent ON recent.amount > :min AND recent.status = :rstatus"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "min", 100)
+	assertParam(t, params, "rstatus", "shipped")
 }

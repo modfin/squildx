@@ -10,7 +10,6 @@ var (
 	ErrMissingParam         = errors.New("squildx: placeholder has no matching value in params map")
 	ErrExtraParam           = errors.New("squildx: params map key has no matching placeholder")
 	ErrMixedPrefix          = errors.New("squildx: mixed parameter prefixes (: and @) in the same query")
-	ErrMultipleParamMaps    = errors.New("squildx: only one params map may be passed per clause")
 	ErrHavingWithoutGroupBy = errors.New("squildx: HAVING requires a GROUP BY clause")
 	ErrNotAStruct           = errors.New("squildx: SelectObject requires a struct or pointer to struct")
 )

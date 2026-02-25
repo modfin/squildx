@@ -168,14 +168,32 @@ func TestMissingPlaceholderValueError(t *testing.T) {
 	}
 }
 
-func TestMultipleParamMapsError(t *testing.T) {
-	_, _, err := New().Select("*").
+func TestMultipleParamMapsMerged(t *testing.T) {
+	q, params, err := New().Select("*").
 		From("users").
-		Where("age > :min_age", Params{"min_age": 18}, Params{"extra": 1}).
+		Where("age > :min_age AND name = :name", Params{"min_age": 18}, Params{"name": "alice"}).
 		Build()
 
-	if !errors.Is(err, ErrMultipleParamMaps) {
-		t.Errorf("expected ErrMultipleParamMaps, got: %v", err)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM users WHERE age > :min_age AND name = :name"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+	assertParam(t, params, "min_age", 18)
+	assertParam(t, params, "name", "alice")
+}
+
+func TestMultipleParamMapsDuplicateKey(t *testing.T) {
+	_, _, err := New().Select("*").
+		From("users").
+		Where("age > :min_age", Params{"min_age": 18}, Params{"min_age": 99}).
+		Build()
+
+	if !errors.Is(err, ErrDuplicateParam) {
+		t.Errorf("expected ErrDuplicateParam, got: %v", err)
 	}
 }
 

@@ -7,17 +7,22 @@ import (
 
 var paramRegex = regexp.MustCompile(`[:@][a-zA-Z_][a-zA-Z0-9_]*`)
 
-// extractParams validates the variadic maps slice and returns a single map.
-// 0 maps → nil, nil; 1 map → that map, nil; 2+ maps → nil, ErrMultipleParamMaps.
+// extractParams merges the variadic Params slices into a single map.
+// Duplicate keys with different values produce ErrDuplicateParam.
 func extractParams(maps []Params) (Params, error) {
 	switch len(maps) {
 	case 0:
 		return nil, nil
 	case 1:
 		return maps[0], nil
-	default:
-		return nil, ErrMultipleParamMaps
 	}
+	merged := make(Params)
+	for _, m := range maps {
+		if err := mergeParams(merged, m); err != nil {
+			return nil, err
+		}
+	}
+	return merged, nil
 }
 
 // parseParams extracts named placeholders from sql, validates them against the
@@ -67,7 +72,12 @@ func parseParams(sql string, params Params) (Params, byte, error) {
 		}
 	}
 
-	return params, prefix, nil
+	// Defensive copy so the builder never holds a reference to the caller's map.
+	copied := make(Params, len(params))
+	for k, v := range params {
+		copied[k] = v
+	}
+	return copied, prefix, nil
 }
 
 func mergeParams(dst, src Params) error {
