@@ -47,8 +47,8 @@ func TestDoubleJoinWithMatchingParams(t *testing.T) {
 	q, params, err := New().
 		Select("*").
 		From("users u").
-		InnerJoin("orders o ON o.user_id = u.id AND o.status = :status", map[string]any{"status": "active"}).
-		InnerJoin("orders o ON o.user_id = u.id AND o.status = :status", map[string]any{"status": "active"}).
+		InnerJoin("orders o ON o.user_id = u.id AND o.status = :status", Params{"status": "active"}).
+		InnerJoin("orders o ON o.user_id = u.id AND o.status = :status", Params{"status": "active"}).
 		Build()
 
 	if err != nil {
@@ -66,8 +66,8 @@ func TestDoubleJoinWithConflictingParams(t *testing.T) {
 	_, _, err := New().
 		Select("*").
 		From("users u").
-		InnerJoin("orders o ON o.user_id = u.id AND o.status = :status", map[string]any{"status": "active"}).
-		InnerJoin("orders o ON o.user_id = u.id AND o.status = :status", map[string]any{"status": "inactive"}).
+		InnerJoin("orders o ON o.user_id = u.id AND o.status = :status", Params{"status": "active"}).
+		InnerJoin("orders o ON o.user_id = u.id AND o.status = :status", Params{"status": "inactive"}).
 		Build()
 
 	if err == nil {
@@ -234,7 +234,7 @@ func TestJoinWithParams(t *testing.T) {
 	q, params, err := New().
 		Select("*").
 		From("users u").
-		InnerJoin("orders o ON o.user_id = u.id AND o.status = :order_status", map[string]any{"order_status": "complete"}).
+		InnerJoin("orders o ON o.user_id = u.id AND o.status = :order_status", Params{"order_status": "complete"}).
 		Build()
 
 	if err != nil {
@@ -270,7 +270,7 @@ func TestCrossJoinWithParams(t *testing.T) {
 	q, params, err := New().
 		Select("*").
 		From("users u").
-		CrossJoin("(SELECT * FROM sizes WHERE active = :active) s", map[string]any{"active": true}).
+		CrossJoin("(SELECT * FROM sizes WHERE active = :active) s", Params{"active": true}).
 		Build()
 
 	if err != nil {
@@ -348,7 +348,7 @@ func TestLateralJoinWithOnParams(t *testing.T) {
 	q, params, err := New().
 		Select("u.name", "recent.*").
 		From("users u").
-		LeftJoinLateral(sub, "recent", "recent.amount > :min", map[string]any{"min": 100}).
+		LeftJoinLateral(sub, "recent", "recent.amount > :min", Params{"min": 100}).
 		Build()
 
 	if err != nil {
@@ -364,7 +364,7 @@ func TestLateralJoinWithOnParams(t *testing.T) {
 }
 
 func TestLateralJoinWithSubqueryParams(t *testing.T) {
-	sub := New().Select("*").From("orders o").Where("o.status = :status", map[string]any{"status": "active"}).Limit(3)
+	sub := New().Select("*").From("orders o").Where("o.status = :status", Params{"status": "active"}).Limit(3)
 
 	q, params, err := New().
 		Select("u.name", "recent.*").
@@ -385,12 +385,12 @@ func TestLateralJoinWithSubqueryParams(t *testing.T) {
 }
 
 func TestLateralJoinParamCollision(t *testing.T) {
-	sub := New().Select("*").From("orders o").Where("o.status = :status", map[string]any{"status": "active"})
+	sub := New().Select("*").From("orders o").Where("o.status = :status", Params{"status": "active"})
 
 	_, _, err := New().
 		Select("*").
 		From("users u").
-		Where("u.status = :status", map[string]any{"status": "inactive"}).
+		Where("u.status = :status", Params{"status": "inactive"}).
 		LeftJoinLateral(sub, "recent", "true").
 		Build()
 
@@ -410,7 +410,7 @@ func TestLateralJoinCombinedWithRegularJoins(t *testing.T) {
 		From("users u").
 		LeftJoin("profiles p ON p.user_id = u.id").
 		LeftJoinLateral(sub, "recent", "true").
-		Where("u.active = :active", map[string]any{"active": true}).
+		Where("u.active = :active", Params{"active": true}).
 		Build()
 
 	if err != nil {
@@ -446,7 +446,7 @@ func TestMissingParamInJoin(t *testing.T) {
 	_, _, err := New().
 		Select("*").
 		From("users u").
-		InnerJoin("orders o ON o.status = :s1 AND o.type = :s2", map[string]any{"s1": "active"}).
+		InnerJoin("orders o ON o.status = :s1 AND o.type = :s2", Params{"s1": "active"}).
 		Build()
 
 	if !errors.Is(err, ErrMissingParam) {
@@ -458,7 +458,7 @@ func TestJoinAtPrefix(t *testing.T) {
 	q, params, err := New().
 		Select("*").
 		From("users u").
-		InnerJoin("orders o ON o.user_id = u.id AND o.status = @order_status", map[string]any{"order_status": "complete"}).
+		InnerJoin("orders o ON o.user_id = u.id AND o.status = @order_status", Params{"order_status": "complete"}).
 		Build()
 
 	if err != nil {
@@ -477,8 +477,8 @@ func TestMixedPrefixWhereAndJoin(t *testing.T) {
 	_, _, err := New().
 		Select("*").
 		From("users u").
-		Where("active = :active", map[string]any{"active": true}).
-		InnerJoin("orders o ON o.status = @status", map[string]any{"status": "active"}).
+		Where("active = :active", Params{"active": true}).
+		InnerJoin("orders o ON o.status = @status", Params{"status": "active"}).
 		Build()
 
 	if !errors.Is(err, ErrMixedPrefix) {
@@ -490,7 +490,7 @@ func TestJoinMultipleParamMaps(t *testing.T) {
 	_, _, err := New().
 		Select("*").
 		From("users u").
-		InnerJoin("orders o ON o.status = :status", map[string]any{"status": "active"}, map[string]any{"extra": 1}).
+		InnerJoin("orders o ON o.status = :status", Params{"status": "active"}, Params{"extra": 1}).
 		Build()
 
 	if !errors.Is(err, ErrMultipleParamMaps) {
@@ -504,7 +504,7 @@ func TestLateralJoinAtPrefixOnParams(t *testing.T) {
 	q, params, err := New().
 		Select("u.name", "recent.*").
 		From("users u").
-		LeftJoinLateral(sub, "recent", "recent.amount > @min", map[string]any{"min": 100}).
+		LeftJoinLateral(sub, "recent", "recent.amount > @min", Params{"min": 100}).
 		Build()
 
 	if err != nil {
@@ -520,12 +520,12 @@ func TestLateralJoinAtPrefixOnParams(t *testing.T) {
 }
 
 func TestLateralJoinSubqueryMixedPrefix(t *testing.T) {
-	sub := New().Select("*").From("orders o").Where("o.status = @status", map[string]any{"status": "active"})
+	sub := New().Select("*").From("orders o").Where("o.status = @status", Params{"status": "active"})
 
 	_, _, err := New().
 		Select("*").
 		From("users u").
-		Where("u.active = :active", map[string]any{"active": true}).
+		Where("u.active = :active", Params{"active": true}).
 		LeftJoinLateral(sub, "recent", "true").
 		Build()
 
@@ -540,7 +540,7 @@ func TestLateralJoinMultipleParamMaps(t *testing.T) {
 	_, _, err := New().
 		Select("u.name", "recent.*").
 		From("users u").
-		LeftJoinLateral(sub, "recent", "recent.amount > :min", map[string]any{"min": 100}, map[string]any{"extra": 1}).
+		LeftJoinLateral(sub, "recent", "recent.amount > :min", Params{"min": 100}, Params{"extra": 1}).
 		Build()
 
 	if !errors.Is(err, ErrMultipleParamMaps) {

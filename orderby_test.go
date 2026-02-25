@@ -30,7 +30,7 @@ func TestOrderByWithParams(t *testing.T) {
 	q, params, err := New().
 		Select("id", "title").
 		From("documents").
-		OrderBy("similarity(embedding, :query_vec) DESC", map[string]any{"query_vec": vec}).
+		OrderBy("similarity(embedding, :query_vec) DESC", Params{"query_vec": vec}).
 		Build()
 
 	if err != nil {
@@ -64,7 +64,7 @@ func TestOrderByAtPrefix(t *testing.T) {
 	q, params, err := New().
 		Select("id", "title").
 		From("documents").
-		OrderBy("similarity(embedding, @query_vec) DESC", map[string]any{"query_vec": vec}).
+		OrderBy("similarity(embedding, @query_vec) DESC", Params{"query_vec": vec}).
 		Build()
 
 	if err != nil {
@@ -85,8 +85,8 @@ func TestMixedPrefixWhereAndOrderBy(t *testing.T) {
 	_, _, err := New().
 		Select("*").
 		From("documents").
-		Where("category = :cat", map[string]any{"cat": "science"}).
-		OrderBy("similarity(embedding, @query_vec) DESC", map[string]any{"query_vec": []float64{0.1}}).
+		Where("category = :cat", Params{"cat": "science"}).
+		OrderBy("similarity(embedding, @query_vec) DESC", Params{"query_vec": []float64{0.1}}).
 		Build()
 
 	if !errors.Is(err, ErrMixedPrefix) {
@@ -98,7 +98,7 @@ func TestOrderByMultipleParamMaps(t *testing.T) {
 	_, _, err := New().
 		Select("*").
 		From("documents").
-		OrderBy("similarity(embedding, :query_vec) DESC", map[string]any{"query_vec": 1}, map[string]any{"extra": 2}).
+		OrderBy("similarity(embedding, :query_vec) DESC", Params{"query_vec": 1}, Params{"extra": 2}).
 		Build()
 
 	if !errors.Is(err, ErrMultipleParamMaps) {
@@ -111,8 +111,8 @@ func TestOrderByWithWhere(t *testing.T) {
 	q, params, err := New().
 		Select("id", "title").
 		From("documents").
-		Where("category = :cat", map[string]any{"cat": "science"}).
-		OrderBy("similarity(embedding, :query_vec) DESC", map[string]any{"query_vec": vec}).
+		Where("category = :cat", Params{"cat": "science"}).
+		OrderBy("similarity(embedding, :query_vec) DESC", Params{"query_vec": vec}).
 		Build()
 
 	if err != nil {

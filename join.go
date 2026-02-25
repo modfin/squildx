@@ -22,7 +22,7 @@ type joinClause struct {
 	alias    string
 }
 
-func (b *builder) addJoin(jt joinType, sql string, maps []map[string]any) *builder {
+func (b *builder) addJoin(jt joinType, sql string, maps []Params) *builder {
 	cp := b.clone()
 	p, err := extractParams(maps)
 	if err != nil {
@@ -58,27 +58,27 @@ func (b *builder) addJoin(jt joinType, sql string, maps []map[string]any) *build
 	return cp
 }
 
-func (b *builder) InnerJoin(sql string, params ...map[string]any) Builder {
+func (b *builder) InnerJoin(sql string, params ...Params) Builder {
 	return b.addJoin(innerJoin, sql, params)
 }
 
-func (b *builder) LeftJoin(sql string, params ...map[string]any) Builder {
+func (b *builder) LeftJoin(sql string, params ...Params) Builder {
 	return b.addJoin(leftJoin, sql, params)
 }
 
-func (b *builder) RightJoin(sql string, params ...map[string]any) Builder {
+func (b *builder) RightJoin(sql string, params ...Params) Builder {
 	return b.addJoin(rightJoin, sql, params)
 }
 
-func (b *builder) FullJoin(sql string, params ...map[string]any) Builder {
+func (b *builder) FullJoin(sql string, params ...Params) Builder {
 	return b.addJoin(fullJoin, sql, params)
 }
 
-func (b *builder) CrossJoin(sql string, params ...map[string]any) Builder {
+func (b *builder) CrossJoin(sql string, params ...Params) Builder {
 	return b.addJoin(crossJoin, sql, params)
 }
 
-func (b *builder) addJoinLateral(jt joinType, sub Builder, alias string, on string, maps []map[string]any) *builder {
+func (b *builder) addJoinLateral(jt joinType, sub Builder, alias string, on string, maps []Params) *builder {
 	cp := b.clone()
 	p, err := extractParams(maps)
 	if err != nil {
@@ -116,11 +116,11 @@ func (b *builder) addJoinLateral(jt joinType, sub Builder, alias string, on stri
 	return cp
 }
 
-func (b *builder) InnerJoinLateral(sub Builder, alias string, on string, params ...map[string]any) Builder {
+func (b *builder) InnerJoinLateral(sub Builder, alias string, on string, params ...Params) Builder {
 	return b.addJoinLateral(innerJoinLateral, sub, alias, on, params)
 }
 
-func (b *builder) LeftJoinLateral(sub Builder, alias string, on string, params ...map[string]any) Builder {
+func (b *builder) LeftJoinLateral(sub Builder, alias string, on string, params ...Params) Builder {
 	return b.addJoinLateral(leftJoinLateral, sub, alias, on, params)
 }
 

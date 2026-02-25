@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (b *builder) Build() (string, map[string]any, error) {
+func (b *builder) Build() (string, Params, error) {
 	if b.err != nil {
 		return "", nil, b.err
 	}
@@ -18,7 +18,7 @@ func (b *builder) Build() (string, map[string]any, error) {
 		return "", nil, ErrNoFrom
 	}
 
-	params := make(map[string]any)
+	params := make(Params)
 
 	var sb strings.Builder
 

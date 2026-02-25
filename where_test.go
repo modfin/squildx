@@ -8,9 +8,9 @@ import (
 func TestMultipleWheres(t *testing.T) {
 	q, params, err := New().Select("*").
 		From("users").
-		Where("age > :min_age", map[string]any{"min_age": 25}).
-		Where("active = :active", map[string]any{"active": true}).
-		Where("role = :role", map[string]any{"role": "admin"}).
+		Where("age > :min_age", Params{"min_age": 25}).
+		Where("active = :active", Params{"active": true}).
+		Where("role = :role", Params{"role": "admin"}).
 		Build()
 
 	if err != nil {
@@ -30,7 +30,7 @@ func TestMultipleWheres(t *testing.T) {
 func TestMultipleParamsInOneClause(t *testing.T) {
 	q, params, err := New().Select("*").
 		From("users").
-		Where("age > :min AND age < :max", map[string]any{"min": 18, "max": 65}).
+		Where("age > :min AND age < :max", Params{"min": 18, "max": 65}).
 		Build()
 
 	if err != nil {
@@ -49,7 +49,7 @@ func TestMultipleParamsInOneClause(t *testing.T) {
 func TestSingleParamMultipleTimes(t *testing.T) {
 	q, params, err := New().Select("*").
 		From("article").
-		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", map[string]any{"search": "test"}).
+		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", Params{"search": "test"}).
 		Build()
 
 	if err != nil {
@@ -88,7 +88,7 @@ func TestDBFunctionInWhere(t *testing.T) {
 	q, params, err := New().
 		Select("*").
 		From("users").
-		Where("created_at > func_get_date(:name)", map[string]any{"name": "test"}).
+		Where("created_at > func_get_date(:name)", Params{"name": "test"}).
 		Build()
 
 	if err != nil {
@@ -146,7 +146,7 @@ func TestWhereNotExists(t *testing.T) {
 }
 
 func TestWhereIn(t *testing.T) {
-	sub := New().Select("user_id").From("orders").Where("total > :min_total", map[string]any{"min_total": 100})
+	sub := New().Select("user_id").From("orders").Where("total > :min_total", Params{"min_total": 100})
 
 	q, params, err := New().Select("*").
 		From("users").
@@ -187,11 +187,11 @@ func TestWhereNotIn(t *testing.T) {
 }
 
 func TestWhereSubqueryParamsMerged(t *testing.T) {
-	sub := New().Select("id").From("orders").Where("status = :status", map[string]any{"status": "active"})
+	sub := New().Select("id").From("orders").Where("status = :status", Params{"status": "active"})
 
 	q, params, err := New().Select("*").
 		From("users").
-		Where("age > :min_age", map[string]any{"min_age": 18}).
+		Where("age > :min_age", Params{"min_age": 18}).
 		WhereIn("id", sub).
 		Build()
 
@@ -209,11 +209,11 @@ func TestWhereSubqueryParamsMerged(t *testing.T) {
 }
 
 func TestWhereSubqueryParamCollision(t *testing.T) {
-	sub := New().Select("id").From("orders").Where("name = :name", map[string]any{"name": "order_name"})
+	sub := New().Select("id").From("orders").Where("name = :name", Params{"name": "order_name"})
 
 	_, _, err := New().Select("*").
 		From("users").
-		Where("name = :name", map[string]any{"name": "user_name"}).
+		Where("name = :name", Params{"name": "user_name"}).
 		WhereIn("id", sub).
 		Build()
 
@@ -226,11 +226,11 @@ func TestWhereSubqueryParamCollision(t *testing.T) {
 }
 
 func TestWhereSubqueryParamCollisionOk(t *testing.T) {
-	sub := New().Select("id").From("orders").Where("name = :name", map[string]any{"name": "order_name"})
+	sub := New().Select("id").From("orders").Where("name = :name", Params{"name": "order_name"})
 
 	q, params, err := New().Select("*").
 		From("users").
-		Where("name = :name", map[string]any{"name": "order_name"}).
+		Where("name = :name", Params{"name": "order_name"}).
 		WhereIn("id", sub).
 		Build()
 
@@ -267,7 +267,7 @@ func TestWhereExistsWithRegularWhere(t *testing.T) {
 
 	q, params, err := New().Select("*").
 		From("users").
-		Where("active = :active", map[string]any{"active": true}).
+		Where("active = :active", Params{"active": true}).
 		WhereExists(sub).
 		Build()
 
@@ -284,7 +284,7 @@ func TestWhereExistsWithRegularWhere(t *testing.T) {
 }
 
 func TestWhereSubqueryImmutability(t *testing.T) {
-	base := New().Select("*").From("users").Where("active = :active", map[string]any{"active": true})
+	base := New().Select("*").From("users").Where("active = :active", Params{"active": true})
 	sub := New().Select("1").From("orders").Where("orders.user_id = users.id")
 
 	_ = base.WhereExists(sub)
@@ -308,8 +308,8 @@ func TestWhereSubqueryImmutability(t *testing.T) {
 func TestReusedParamCrossClauseConflict(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("article").
-		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", map[string]any{"search": "first"}).
-		Where("body = :search", map[string]any{"search": "second"}).
+		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", Params{"search": "first"}).
+		Where("body = :search", Params{"search": "second"}).
 		Build()
 
 	if err == nil {
@@ -323,8 +323,8 @@ func TestReusedParamCrossClauseConflict(t *testing.T) {
 func TestReusedParamCrossClauseSameValue(t *testing.T) {
 	q, params, err := New().Select("*").
 		From("article").
-		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", map[string]any{"search": "same"}).
-		Where("body = :search", map[string]any{"search": "same"}).
+		Where("(title ILIKE '%' || :search || '%' OR text ILIKE '%' || :search || '%')", Params{"search": "same"}).
+		Where("body = :search", Params{"search": "same"}).
 		Build()
 
 	if err != nil {

@@ -33,17 +33,17 @@ func TestValueEqual(t *testing.T) {
 func TestParamsEqual(t *testing.T) {
 	tests := []struct {
 		name string
-		a, b map[string]any
+		a, b Params
 		want bool
 	}{
 		{"both nil", nil, nil, true},
-		{"both empty", map[string]any{}, map[string]any{}, true},
-		{"nil vs empty", nil, map[string]any{}, true},
-		{"equal params", map[string]any{"x": 1}, map[string]any{"x": 1}, true},
-		{"different values", map[string]any{"x": 1}, map[string]any{"x": 2}, false},
-		{"different keys", map[string]any{"x": 1}, map[string]any{"y": 1}, false},
-		{"different lengths", map[string]any{"x": 1}, map[string]any{"x": 1, "y": 2}, false},
-		{"multiple equal", map[string]any{"a": "foo", "b": 42}, map[string]any{"a": "foo", "b": 42}, true},
+		{"both empty", Params{}, Params{}, true},
+		{"nil vs empty", nil, Params{}, true},
+		{"equal params", Params{"x": 1}, Params{"x": 1}, true},
+		{"different values", Params{"x": 1}, Params{"x": 2}, false},
+		{"different keys", Params{"x": 1}, Params{"y": 1}, false},
+		{"different lengths", Params{"x": 1}, Params{"x": 1, "y": 2}, false},
+		{"multiple equal", Params{"a": "foo", "b": 42}, Params{"a": "foo", "b": 42}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -57,8 +57,8 @@ func TestParamsEqual(t *testing.T) {
 
 func TestBuildersEqual(t *testing.T) {
 	t.Run("identical builders", func(t *testing.T) {
-		a := New().Select("*").From("users").Where("id = :id", map[string]any{"id": 1})
-		b := New().Select("*").From("users").Where("id = :id", map[string]any{"id": 1})
+		a := New().Select("*").From("users").Where("id = :id", Params{"id": 1})
+		b := New().Select("*").From("users").Where("id = :id", Params{"id": 1})
 		if !buildersEqual(a, b) {
 			t.Error("expected identical builders to be equal")
 		}
@@ -73,8 +73,8 @@ func TestBuildersEqual(t *testing.T) {
 	})
 
 	t.Run("different params", func(t *testing.T) {
-		a := New().Select("*").From("users").Where("id = :id", map[string]any{"id": 1})
-		b := New().Select("*").From("users").Where("id = :id", map[string]any{"id": 2})
+		a := New().Select("*").From("users").Where("id = :id", Params{"id": 1})
+		b := New().Select("*").From("users").Where("id = :id", Params{"id": 2})
 		if buildersEqual(a, b) {
 			t.Error("expected builders with different params to not be equal")
 		}

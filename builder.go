@@ -1,5 +1,9 @@
 package squildx
 
+// Params is a named parameter map for SQL query building.
+// It is interchangeable with map[string]any.
+type Params map[string]any
+
 type Builder interface {
 	Select(columns ...string) Builder
 	SelectObject(obj any, table ...string) Builder
@@ -8,31 +12,31 @@ type Builder interface {
 
 	From(table string) Builder
 
-	InnerJoin(sql string, params ...map[string]any) Builder
-	LeftJoin(sql string, params ...map[string]any) Builder
-	RightJoin(sql string, params ...map[string]any) Builder
-	FullJoin(sql string, params ...map[string]any) Builder
-	CrossJoin(sql string, params ...map[string]any) Builder
+	InnerJoin(sql string, params ...Params) Builder
+	LeftJoin(sql string, params ...Params) Builder
+	RightJoin(sql string, params ...Params) Builder
+	FullJoin(sql string, params ...Params) Builder
+	CrossJoin(sql string, params ...Params) Builder
 
-	InnerJoinLateral(sub Builder, alias string, on string, params ...map[string]any) Builder
-	LeftJoinLateral(sub Builder, alias string, on string, params ...map[string]any) Builder
+	InnerJoinLateral(sub Builder, alias string, on string, params ...Params) Builder
+	LeftJoinLateral(sub Builder, alias string, on string, params ...Params) Builder
 	CrossJoinLateral(sub Builder, alias string) Builder
 
-	Where(sql string, params ...map[string]any) Builder
+	Where(sql string, params ...Params) Builder
 	WhereExists(sub Builder) Builder
 	WhereNotExists(sub Builder) Builder
 	WhereIn(column string, sub Builder) Builder
 	WhereNotIn(column string, sub Builder) Builder
 
 	GroupBy(exprs ...string) Builder
-	Having(sql string, params ...map[string]any) Builder
+	Having(sql string, params ...Params) Builder
 
-	OrderBy(expr string, params ...map[string]any) Builder
+	OrderBy(expr string, params ...Params) Builder
 
 	Limit(n uint64) Builder
 	Offset(n uint64) Builder
 
-	Build() (string, map[string]any, error)
+	Build() (string, Params, error)
 }
 
 type builder struct {
@@ -70,7 +74,7 @@ func (b *builder) clone() *builder {
 
 type paramClause struct {
 	sql       string
-	params    map[string]any
+	params    Params
 	subQuery  Builder
 	subPrefix string
 }

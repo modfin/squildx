@@ -9,7 +9,7 @@ var paramRegex = regexp.MustCompile(`[:@][a-zA-Z_][a-zA-Z0-9_]*`)
 
 // extractParams validates the variadic maps slice and returns a single map.
 // 0 maps → nil, nil; 1 map → that map, nil; 2+ maps → nil, ErrMultipleParamMaps.
-func extractParams(maps []map[string]any) (map[string]any, error) {
+func extractParams(maps []Params) (Params, error) {
 	switch len(maps) {
 	case 0:
 		return nil, nil
@@ -26,7 +26,7 @@ func extractParams(maps []map[string]any) (map[string]any, error) {
 //
 // It skips doubled-prefix sequences (:: and @@) so that PostgreSQL type casts
 // (value::integer) and session variables (@@var) are not treated as parameters.
-func parseParams(sql string, params map[string]any) (map[string]any, byte, error) {
+func parseParams(sql string, params Params) (Params, byte, error) {
 	indices := paramRegex.FindAllStringIndex(sql, -1)
 
 	var prefix byte
@@ -70,7 +70,7 @@ func parseParams(sql string, params map[string]any) (map[string]any, byte, error
 	return params, prefix, nil
 }
 
-func mergeParams(dst, src map[string]any) error {
+func mergeParams(dst, src Params) error {
 	for k, v := range src {
 		if existing, ok := dst[k]; ok {
 			if !valueEqual(existing, v) {

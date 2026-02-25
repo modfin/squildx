@@ -8,8 +8,8 @@ import (
 func TestDuplicateParamSameValue(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :val", map[string]any{"val": 18}).
-		Where("score > :val", map[string]any{"val": 18}).
+		Where("age > :val", Params{"val": 18}).
+		Where("score > :val", Params{"val": 18}).
 		Build()
 
 	if err != nil {
@@ -20,8 +20,8 @@ func TestDuplicateParamSameValue(t *testing.T) {
 func TestDuplicateParamDifferentValue(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :val", map[string]any{"val": 18}).
-		Where("score > :val", map[string]any{"val": 99}).
+		Where("age > :val", Params{"val": 18}).
+		Where("score > :val", Params{"val": 99}).
 		Build()
 
 	if !errors.Is(err, ErrDuplicateParam) {
@@ -32,7 +32,7 @@ func TestDuplicateParamDifferentValue(t *testing.T) {
 func TestMissingParamValue(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :min AND age < :max", map[string]any{"min": 18}).
+		Where("age > :min AND age < :max", Params{"min": 18}).
 		Build()
 
 	if !errors.Is(err, ErrMissingParam) {
@@ -43,7 +43,7 @@ func TestMissingParamValue(t *testing.T) {
 func TestExtraParamKey(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :min", map[string]any{"min": 18, "extra": 65}).
+		Where("age > :min", Params{"min": 18, "extra": 65}).
 		Build()
 
 	if !errors.Is(err, ErrExtraParam) {
@@ -54,7 +54,7 @@ func TestExtraParamKey(t *testing.T) {
 func TestAtPrefixParams(t *testing.T) {
 	q, params, err := New().Select("*").
 		From("users").
-		Where("age > @min_age", map[string]any{"min_age": 25}).
+		Where("age > @min_age", Params{"min_age": 25}).
 		Build()
 
 	if err != nil {
@@ -71,8 +71,8 @@ func TestAtPrefixParams(t *testing.T) {
 func TestMixedPrefixError(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :min_age", map[string]any{"min_age": 18}).
-		Where("active = @active", map[string]any{"active": true}).
+		Where("age > :min_age", Params{"min_age": 18}).
+		Where("active = @active", Params{"active": true}).
 		Build()
 
 	if !errors.Is(err, ErrMixedPrefix) {
@@ -83,7 +83,7 @@ func TestMixedPrefixError(t *testing.T) {
 func TestMixedPrefixInSameClause(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :min AND name = @name", map[string]any{"min": 18, "name": "test"}).
+		Where("age > :min AND name = @name", Params{"min": 18, "name": "test"}).
 		Build()
 
 	if !errors.Is(err, ErrMixedPrefix) {
@@ -132,7 +132,7 @@ func TestDoubleAtNotParam(t *testing.T) {
 func TestDoubleColonWithRealParam(t *testing.T) {
 	q, params, err := New().Select("*").
 		From("users").
-		Where("age::integer > :min_age", map[string]any{"min_age": 18}).
+		Where("age::integer > :min_age", Params{"min_age": 18}).
 		Build()
 
 	if err != nil {
@@ -149,7 +149,7 @@ func TestDoubleColonWithRealParam(t *testing.T) {
 func TestExtraMapKeyError(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :min_age", map[string]any{"min_age": 18, "unused": "value"}).
+		Where("age > :min_age", Params{"min_age": 18, "unused": "value"}).
 		Build()
 
 	if !errors.Is(err, ErrExtraParam) {
@@ -160,7 +160,7 @@ func TestExtraMapKeyError(t *testing.T) {
 func TestMissingPlaceholderValueError(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :min_age AND name = :name", map[string]any{"min_age": 18}).
+		Where("age > :min_age AND name = :name", Params{"min_age": 18}).
 		Build()
 
 	if !errors.Is(err, ErrMissingParam) {
@@ -171,7 +171,7 @@ func TestMissingPlaceholderValueError(t *testing.T) {
 func TestMultipleParamMapsError(t *testing.T) {
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :min_age", map[string]any{"min_age": 18}, map[string]any{"extra": 1}).
+		Where("age > :min_age", Params{"min_age": 18}, Params{"extra": 1}).
 		Build()
 
 	if !errors.Is(err, ErrMultipleParamMaps) {
@@ -180,11 +180,11 @@ func TestMultipleParamMapsError(t *testing.T) {
 }
 
 func TestSubqueryMixedPrefixError(t *testing.T) {
-	sub := New().Select("id").From("orders").Where("status = @status", map[string]any{"status": "active"})
+	sub := New().Select("id").From("orders").Where("status = @status", Params{"status": "active"})
 
 	_, _, err := New().Select("*").
 		From("users").
-		Where("age > :min_age", map[string]any{"min_age": 18}).
+		Where("age > :min_age", Params{"min_age": 18}).
 		WhereIn("id", sub).
 		Build()
 
@@ -194,11 +194,11 @@ func TestSubqueryMixedPrefixError(t *testing.T) {
 }
 
 func TestAtPrefixWithSubquery(t *testing.T) {
-	sub := New().Select("id").From("orders").Where("status = @status", map[string]any{"status": "active"})
+	sub := New().Select("id").From("orders").Where("status = @status", Params{"status": "active"})
 
 	q, params, err := New().Select("*").
 		From("users").
-		Where("age > @min_age", map[string]any{"min_age": 18}).
+		Where("age > @min_age", Params{"min_age": 18}).
 		WhereIn("id", sub).
 		Build()
 
@@ -218,8 +218,8 @@ func TestAtPrefixWithSubquery(t *testing.T) {
 func TestAtPrefixMultipleClauses(t *testing.T) {
 	q, params, err := New().Select("*").
 		From("users").
-		Where("age > @min_age", map[string]any{"min_age": 18}).
-		Where("active = @active", map[string]any{"active": true}).
+		Where("age > @min_age", Params{"min_age": 18}).
+		Where("active = @active", Params{"active": true}).
 		Build()
 
 	if err != nil {
@@ -238,7 +238,7 @@ func TestAtPrefixMultipleClauses(t *testing.T) {
 func TestDoubleAtWithRealAtParam(t *testing.T) {
 	q, params, err := New().Select("*").
 		From("users").
-		Where("@@session_var = true AND name = @name", map[string]any{"name": "test"}).
+		Where("@@session_var = true AND name = @name", Params{"name": "test"}).
 		Build()
 
 	if err != nil {
@@ -255,10 +255,10 @@ func TestDoubleAtWithRealAtParam(t *testing.T) {
 func TestPrefixImmutability(t *testing.T) {
 	base := New().Select("*").From("users")
 
-	_ = base.Where("age > :min_age", map[string]any{"min_age": 18})
+	_ = base.Where("age > :min_age", Params{"min_age": 18})
 
 	// base should not have its prefix set — @ prefix should still work on base
-	q, params, err := base.Where("name = @name", map[string]any{"name": "test"}).Build()
+	q, params, err := base.Where("name = @name", Params{"name": "test"}).Build()
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

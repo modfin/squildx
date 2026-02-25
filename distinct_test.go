@@ -26,7 +26,7 @@ func TestDistinctWithWhere(t *testing.T) {
 		Select("name", "email").
 		From("users").
 		Distinct().
-		Where("active = :active", map[string]any{"active": true}).
+		Where("active = :active", Params{"active": true}).
 		Build()
 
 	if err != nil {

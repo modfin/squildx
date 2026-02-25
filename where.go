@@ -2,7 +2,7 @@ package squildx
 
 import "fmt"
 
-func (b *builder) Where(sql string, params ...map[string]any) Builder {
+func (b *builder) Where(sql string, params ...Params) Builder {
 	cp := b.clone()
 	p, err := extractParams(params)
 	if err != nil {
