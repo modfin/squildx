@@ -119,6 +119,13 @@ func TestToSnakeCase(t *testing.T) {
 		{"already", "already"},
 		{"HTMLParser", "html_parser"},
 		{"myURL", "my_url"},
+		{"Field1Name", "field1_name"},
+		{"V2API", "v2_api"},
+		{"S3Bucket", "s3_bucket"},
+		{"Level2Count", "level2_count"},
+		{"HTTP2", "http2"},
+		{"MyV2", "my_v2"},
+		{"abc2def", "abc2def"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {

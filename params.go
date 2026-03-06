@@ -91,3 +91,27 @@ func mergeParams(dst, src Params) error {
 	}
 	return nil
 }
+
+func detectPrefix(sql string) byte {
+	indices := paramRegex.FindAllStringIndex(sql, -1)
+	for _, idx := range indices {
+		if idx[0] > 0 && sql[idx[0]-1] == sql[idx[0]] {
+			continue
+		}
+		return sql[idx[0]]
+	}
+	return 0
+}
+
+func reconcilePrefix(a, b byte) (byte, error) {
+	if a == 0 {
+		return b, nil
+	}
+	if b == 0 {
+		return a, nil
+	}
+	if a != b {
+		return 0, ErrMixedPrefix
+	}
+	return a, nil
+}

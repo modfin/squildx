@@ -288,3 +288,96 @@ func TestPrefixImmutability(t *testing.T) {
 	}
 	assertParam(t, params, "name", "test")
 }
+
+func TestNestedSubqueryMixedPrefix(t *testing.T) {
+	inner := New().Select("1").From("c").Where("z = @z", Params{"z": 3})
+	middle := New().Select("1").From("b").WhereExists(inner)
+
+	_, _, err := New().Select("*").From("a").
+		Where("y = :y", Params{"y": 2}).
+		WhereExists(middle).
+		Build()
+
+	if !errors.Is(err, ErrMixedPrefix) {
+		t.Errorf("expected ErrMixedPrefix, got: %v", err)
+	}
+}
+
+func TestSiblingSubqueriesMixedPrefix(t *testing.T) {
+	sub1 := New().Select("1").From("a").Where("x = :x", Params{"x": 1})
+	sub2 := New().Select("1").From("b").Where("y = @y", Params{"y": 2})
+
+	_, _, err := New().Select("*").From("c").
+		WhereExists(sub1).
+		WhereExists(sub2).
+		Build()
+
+	if !errors.Is(err, ErrMixedPrefix) {
+		t.Errorf("expected ErrMixedPrefix, got: %v", err)
+	}
+}
+
+func TestSiblingSubqueriesMixedPrefixNoParentParams(t *testing.T) {
+	sub1 := New().Select("id").From("a").Where("x = :x", Params{"x": 1})
+	sub2 := New().Select("id").From("b").Where("y = @y", Params{"y": 2})
+
+	_, _, err := New().Select("*").From("c").
+		WhereIn("id", sub1).
+		WhereNotIn("id", sub2).
+		Build()
+
+	if !errors.Is(err, ErrMixedPrefix) {
+		t.Errorf("expected ErrMixedPrefix, got: %v", err)
+	}
+}
+
+func TestDeeplyNestedSubqueryMixedPrefix(t *testing.T) {
+	level3 := New().Select("1").From("d").Where("w = @w", Params{"w": 4})
+	level2 := New().Select("1").From("c").WhereExists(level3)
+	level1 := New().Select("id").From("b").WhereIn("id", level2)
+
+	_, _, err := New().Select("*").From("a").
+		Where("y = :y", Params{"y": 2}).
+		WhereExists(level1).
+		Build()
+
+	if !errors.Is(err, ErrMixedPrefix) {
+		t.Errorf("expected ErrMixedPrefix, got: %v", err)
+	}
+}
+
+func TestLateralJoinNestedSubqueryMixedPrefix(t *testing.T) {
+	inner := New().Select("1").From("c").Where("z = @z", Params{"z": 3})
+	sub := New().Select("*").From("b").WhereExists(inner)
+
+	_, _, err := New().Select("*").From("a").
+		Where("y = :y", Params{"y": 2}).
+		LeftJoinLateral(sub, "lat", "true").
+		Build()
+
+	if !errors.Is(err, ErrMixedPrefix) {
+		t.Errorf("expected ErrMixedPrefix, got: %v", err)
+	}
+}
+
+func TestSiblingSubqueriesSamePrefixOk(t *testing.T) {
+	sub1 := New().Select("1").From("a").Where("x = :x", Params{"x": 1})
+	sub2 := New().Select("1").From("b").Where("y = :y", Params{"y": 2})
+
+	q, params, err := New().Select("*").From("c").
+		WhereExists(sub1).
+		WhereExists(sub2).
+		Build()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "SELECT * FROM c WHERE EXISTS (SELECT 1 FROM a WHERE x = :x) AND EXISTS (SELECT 1 FROM b WHERE y = :y)"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+
+	assertParam(t, params, "x", 1)
+	assertParam(t, params, "y", 2)
+}

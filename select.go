@@ -55,30 +55,17 @@ func collectColumns(t reflect.Type, table string, cols *[]string) {
 			ft = ft.Elem()
 		}
 
-		// Anonymous (embedded) struct: recurse to flatten
-		if f.Anonymous && ft.Kind() == reflect.Struct {
+		tagName := fieldTagName(f)
+		if tagName == "-" {
+			continue
+		}
+
+		if f.Anonymous && ft.Kind() == reflect.Struct && tagName == "" {
 			collectColumns(ft, table, cols)
 			continue
 		}
 
-		// All other fields (including named structs like time.Time)
-		name := ""
-		for _, tag := range []string{"squildx", "db", "json"} {
-			if v, ok := f.Tag.Lookup(tag); ok {
-				v, _, _ = strings.Cut(v, ",")
-				if v == "-" {
-					name = "-"
-					break
-				}
-				if v != "" {
-					name = v
-					break
-				}
-			}
-		}
-		if name == "-" {
-			continue
-		}
+		name := tagName
 		if name == "" {
 			name = toSnakeCase(f.Name)
 		}
@@ -87,6 +74,23 @@ func collectColumns(t reflect.Type, table string, cols *[]string) {
 		}
 		*cols = append(*cols, name)
 	}
+}
+
+func fieldTagName(f reflect.StructField) string {
+	for _, tag := range []string{"squildx", "db", "json"} {
+		v, ok := f.Tag.Lookup(tag)
+		if !ok {
+			continue
+		}
+		v, _, _ = strings.Cut(v, ",")
+		if v == "-" {
+			return "-"
+		}
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func (b *builder) RemoveSelect(columns ...string) Builder {

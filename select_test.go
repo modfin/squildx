@@ -367,3 +367,57 @@ func TestSelectObjectNamedStructWithDash(t *testing.T) {
 		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
 	}
 }
+
+func TestSelectObjectEmbeddedWithDashTag(t *testing.T) {
+	type Base struct {
+		ID int `db:"id"`
+	}
+	type row struct {
+		Base `squildx:"-"`
+		Name string `db:"name"`
+	}
+	q, _, err := New().SelectObject(row{}).From("t").Build()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := "SELECT name FROM t"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestSelectObjectEmbeddedWithNameTag(t *testing.T) {
+	type Base struct {
+		ID int `db:"id"`
+	}
+	type row struct {
+		Base `db:"base_data"`
+		Name string `db:"name"`
+	}
+	q, _, err := New().SelectObject(row{}).From("t").Build()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := "SELECT base_data, name FROM t"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
+
+func TestSelectObjectEmbeddedWithDbDash(t *testing.T) {
+	type Base struct {
+		ID int `db:"id"`
+	}
+	type row struct {
+		Base `db:"-"`
+		Name string `db:"name"`
+	}
+	q, _, err := New().SelectObject(row{}).From("t").Build()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := "SELECT name FROM t"
+	if q != expected {
+		t.Errorf("SQL mismatch\n got: %s\nwant: %s", q, expected)
+	}
+}
