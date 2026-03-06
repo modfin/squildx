@@ -23,9 +23,10 @@ Single-package library using the **immutable Builder pattern** — every method 
 - `Builder` interface (`builder.go`) — public API with `Select`, `Distinct`, `From`, `Where`, `WhereExists`/`WhereNotExists`/`WhereIn`/`WhereNotIn`, `InnerJoin`/`LeftJoin`/`RightJoin`/`FullJoin`/`CrossJoin`, `InnerJoinLateral`/`LeftJoinLateral`/`CrossJoinLateral`, `GroupBy`, `Having`, `OrderBy`, `Limit`, `Offset`, `Build`
 - `builder` struct (`builder.go`) — internal state; created via `New()`
 - `joinClause` / `paramClause` — internal clause representations. Where subquery methods (`WhereExists`, `WhereIn`, etc.) use `paramClause.subQuery` to embed a nested `Builder`.
-- `Build()` (`build.go`) — assembles final SQL string and merged `map[string]any` params
+- `Params` (`builder.go`) — named type `map[string]any` used throughout the API for parameter maps
+- `Build()` (`build.go`) — assembles final SQL string and merged `Params` map
 
-**Parameter system** (`params.go`): Named placeholders are extracted via regex, matched positionally against variadic `values ...any` args, and merged across all clauses at build time. Duplicate param names with different values produce `ErrDuplicateParam`.
+**Parameter system** (`params.go`): Named placeholders are extracted via regex, matched against `Params` maps, and merged across all clauses at build time. Duplicate param names with different values produce `ErrDuplicateParam`.
 
 **Duplicate join detection** (`join.go`): Adding the same join twice with identical parameters is silently deduplicated. Adding the same join target with conflicting clauses or parameters produces `ErrDuplicateJoin`. This applies to both regular joins and lateral joins.
 

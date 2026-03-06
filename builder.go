@@ -1,5 +1,9 @@
 package squildx
 
+// Params is a named parameter map for SQL query building.
+// It is interchangeable with map[string]any.
+type Params map[string]any
+
 type Builder interface {
 	Select(columns ...string) Builder
 	SelectObject(obj any, table ...string) Builder
@@ -8,45 +12,46 @@ type Builder interface {
 
 	From(table string) Builder
 
-	InnerJoin(sql string, values ...any) Builder
-	LeftJoin(sql string, values ...any) Builder
-	RightJoin(sql string, values ...any) Builder
-	FullJoin(sql string, values ...any) Builder
-	CrossJoin(sql string, values ...any) Builder
+	InnerJoin(sql string, params ...Params) Builder
+	LeftJoin(sql string, params ...Params) Builder
+	RightJoin(sql string, params ...Params) Builder
+	FullJoin(sql string, params ...Params) Builder
+	CrossJoin(sql string, params ...Params) Builder
 
-	InnerJoinLateral(sub Builder, alias string, on string, values ...any) Builder
-	LeftJoinLateral(sub Builder, alias string, on string, values ...any) Builder
+	InnerJoinLateral(sub Builder, alias string, on string, params ...Params) Builder
+	LeftJoinLateral(sub Builder, alias string, on string, params ...Params) Builder
 	CrossJoinLateral(sub Builder, alias string) Builder
 
-	Where(sql string, values ...any) Builder
+	Where(sql string, params ...Params) Builder
 	WhereExists(sub Builder) Builder
 	WhereNotExists(sub Builder) Builder
 	WhereIn(column string, sub Builder) Builder
 	WhereNotIn(column string, sub Builder) Builder
 
 	GroupBy(exprs ...string) Builder
-	Having(sql string, values ...any) Builder
+	Having(sql string, params ...Params) Builder
 
-	OrderBy(expr string, values ...any) Builder
+	OrderBy(expr string, params ...Params) Builder
 
 	Limit(n uint64) Builder
 	Offset(n uint64) Builder
 
-	Build() (string, map[string]any, error)
+	Build() (string, Params, error)
 }
 
 type builder struct {
-	columns  []string
-	distinct bool
-	from     string
-	joins    []joinClause
-	wheres   []paramClause
-	groupBys []string
-	havings  []paramClause
-	orderBys []paramClause
-	limit    *uint64
-	offset   *uint64
-	err      error
+	columns     []string
+	distinct    bool
+	from        string
+	joins       []joinClause
+	wheres      []paramClause
+	groupBys    []string
+	havings     []paramClause
+	orderBys    []paramClause
+	limit       *uint64
+	offset      *uint64
+	paramPrefix byte // ':' or '@', 0 = not yet detected
+	err         error
 }
 
 func New() Builder {
@@ -67,9 +72,22 @@ func (b *builder) clone() *builder {
 	return &cp
 }
 
+// setPrefix records the detected parameter prefix (':' or '@') on the builder.
+// It returns ErrMixedPrefix if the builder already has a different prefix set.
+func (b *builder) setPrefix(prefix byte) error {
+	if prefix == 0 {
+		return nil
+	}
+	if b.paramPrefix != 0 && b.paramPrefix != prefix {
+		return ErrMixedPrefix
+	}
+	b.paramPrefix = prefix
+	return nil
+}
+
 type paramClause struct {
 	sql       string
-	params    map[string]any
+	params    Params
 	subQuery  Builder
 	subPrefix string
 }

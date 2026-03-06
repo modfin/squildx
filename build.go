@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (b *builder) Build() (string, map[string]any, error) {
+func (b *builder) Build() (string, Params, error) {
 	if b.err != nil {
 		return "", nil, b.err
 	}
@@ -18,7 +18,8 @@ func (b *builder) Build() (string, map[string]any, error) {
 		return "", nil, ErrNoFrom
 	}
 
-	params := make(map[string]any)
+	params := make(Params)
+	prefix := b.paramPrefix
 
 	var sb strings.Builder
 
@@ -38,6 +39,11 @@ func (b *builder) Build() (string, map[string]any, error) {
 		sb.WriteString(" ")
 		if j.subQuery != nil {
 			subSQL, subParams, err := j.subQuery.Build()
+			if err != nil {
+				return "", nil, err
+			}
+			subPrefix := detectPrefix(subSQL)
+			prefix, err = reconcilePrefix(prefix, subPrefix)
 			if err != nil {
 				return "", nil, err
 			}
@@ -68,6 +74,11 @@ func (b *builder) Build() (string, map[string]any, error) {
 		for i, w := range b.wheres {
 			if w.subQuery != nil {
 				subSQL, subParams, err := w.subQuery.Build()
+				if err != nil {
+					return "", nil, err
+				}
+				subPrefix := detectPrefix(subSQL)
+				prefix, err = reconcilePrefix(prefix, subPrefix)
 				if err != nil {
 					return "", nil, err
 				}
