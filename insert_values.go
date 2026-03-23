@@ -40,7 +40,7 @@ func (b *insertBuilder) ValuesObject(obj any) InsertBuilder {
 	case len(cp.columns) == 0:
 		cp.columns = cols
 	case !reflect.DeepEqual(cp.columns, cols):
-		cp.err = ErrNoInsertColumns
+		cp.err = ErrColumnMismatch
 		return cp
 	}
 	cp.valueRows = append(cp.valueRows, paramClause{sql: sql, params: params})
@@ -82,6 +82,9 @@ func collectFieldValues(t reflect.Type, v reflect.Value, table string, cols *[]s
 		ft := f.Type
 		fv := v.Field(i)
 		for ft.Kind() == reflect.Ptr {
+			if fv.IsNil() {
+				break
+			}
 			ft = ft.Elem()
 			fv = fv.Elem()
 		}

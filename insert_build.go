@@ -24,7 +24,6 @@ func (b *insertBuilder) Build() (string, Params, error) {
 	}
 
 	params := make(Params)
-	prefix := b.paramPrefix
 
 	var sb strings.Builder
 
@@ -54,10 +53,8 @@ func (b *insertBuilder) Build() (string, Params, error) {
 			return "", nil, err
 		}
 		subPrefix := detectPrefix(subSQL)
-		var reconcileErr error
-		prefix, reconcileErr = reconcilePrefix(prefix, subPrefix)
-		if reconcileErr != nil {
-			return "", nil, reconcileErr
+		if _, err := reconcilePrefix(b.paramPrefix, subPrefix); err != nil {
+			return "", nil, err
 		}
 		sb.WriteString(" ")
 		sb.WriteString(subSQL)
@@ -86,8 +83,6 @@ func (b *insertBuilder) Build() (string, Params, error) {
 		sb.WriteString(" RETURNING ")
 		sb.WriteString(strings.Join(b.returnings, ", "))
 	}
-
-	_ = prefix // prefix tracked for future reconciliation with mixed queries
 
 	return sb.String(), params, nil
 }

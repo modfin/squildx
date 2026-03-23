@@ -17,4 +17,5 @@ var (
 	ErrNoInsertColumns = errors.New("squildx: INSERT requires at least one column")
 	ErrNoInsertValues  = errors.New("squildx: INSERT requires values, an object, or a SELECT subquery")
 	ErrValuesAndSelect = errors.New("squildx: INSERT cannot have both VALUES and a SELECT subquery")
+	ErrColumnMismatch  = errors.New("squildx: ValuesObject columns do not match previously set columns")
 )

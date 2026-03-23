@@ -94,8 +94,8 @@ func TestInsertValuesObject_ColumnMismatch(t *testing.T) {
 	q := NewInsert().Into("users").Columns("email").
 		ValuesObject(User{Name: "Alice"})
 	_, _, err := q.Build()
-	if !errors.Is(err, ErrNoInsertColumns) {
-		t.Errorf("expected ErrNoInsertColumns on column mismatch, got: %v", err)
+	if !errors.Is(err, ErrColumnMismatch) {
+		t.Errorf("expected ErrColumnMismatch on column mismatch, got: %v", err)
 	}
 }
 
