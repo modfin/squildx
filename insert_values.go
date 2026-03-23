@@ -1,7 +1,7 @@
 package squildx
 
 import (
-	"reflect"
+	"slices"
 	"strings"
 )
 
@@ -39,7 +39,7 @@ func (b *insertBuilder) ValuesObject(obj any) InsertBuilder {
 	switch {
 	case len(cp.columns) == 0:
 		cp.columns = cols
-	case !reflect.DeepEqual(cp.columns, cols):
+	case !slices.Equal(cp.columns, cols):
 		cp.err = ErrColumnMismatch
 		return cp
 	}
@@ -48,21 +48,15 @@ func (b *insertBuilder) ValuesObject(obj any) InsertBuilder {
 }
 
 func structFieldValues(obj any) (columns []string, sql string, params Params, err error) {
-	v := reflect.ValueOf(obj)
-	t := reflect.TypeOf(obj)
-	if t == nil {
-		return nil, "", nil, ErrNotAStruct
-	}
-	for t.Kind() == reflect.Ptr {
-		t = t.Elem()
-		v = v.Elem()
-	}
-	if t.Kind() != reflect.Struct {
-		return nil, "", nil, ErrNotAStruct
+	columns, err = structColumns(obj, "")
+	if err != nil {
+		return nil, "", nil, err
 	}
 
-	params = Params{}
-	collectFieldValues(t, v, "", &columns, params)
+	params, err = structValues(obj)
+	if err != nil {
+		return nil, "", nil, err
+	}
 
 	placeholders := make([]string, len(columns))
 	for i, col := range columns {
@@ -70,43 +64,4 @@ func structFieldValues(obj any) (columns []string, sql string, params Params, er
 	}
 	sql = strings.Join(placeholders, ", ")
 	return columns, sql, params, nil
-}
-
-func collectFieldValues(t reflect.Type, v reflect.Value, table string, cols *[]string, params Params) {
-	for i := range t.NumField() {
-		f := t.Field(i)
-		if !f.IsExported() {
-			continue
-		}
-
-		ft := f.Type
-		fv := v.Field(i)
-		for ft.Kind() == reflect.Ptr {
-			if fv.IsNil() {
-				break
-			}
-			ft = ft.Elem()
-			fv = fv.Elem()
-		}
-
-		tagName := fieldTagName(f)
-		if tagName == "-" {
-			continue
-		}
-
-		if f.Anonymous && ft.Kind() == reflect.Struct && tagName == "" {
-			collectFieldValues(ft, fv, table, cols, params)
-			continue
-		}
-
-		name := tagName
-		if name == "" {
-			name = toSnakeCase(f.Name)
-		}
-		if table != "" {
-			name = table + "." + name
-		}
-		*cols = append(*cols, name)
-		params[name] = fv.Interface()
-	}
 }

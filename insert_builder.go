@@ -51,12 +51,5 @@ func (b *insertBuilder) clone() *insertBuilder {
 }
 
 func (b *insertBuilder) setPrefix(prefix byte) error {
-	if prefix == 0 {
-		return nil
-	}
-	if b.paramPrefix != 0 && b.paramPrefix != prefix {
-		return ErrMixedPrefix
-	}
-	b.paramPrefix = prefix
-	return nil
+	return checkSetPrefix(&b.paramPrefix, prefix)
 }

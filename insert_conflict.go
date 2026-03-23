@@ -3,7 +3,7 @@ package squildx
 func (b *insertBuilder) OnConflictDoNothing(columns ...string) InsertBuilder {
 	cp := b.clone()
 	cp.conflict = &conflictClause{
-		columns: columns,
+		columns: copySlice(columns),
 	}
 	return cp
 }
