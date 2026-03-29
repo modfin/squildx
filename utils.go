@@ -40,6 +40,17 @@ func buildersEqual(a, b Builder) bool {
 	return sqlA == sqlB && paramsEqual(paramsA, paramsB)
 }
 
+func checkSetPrefix(current *byte, prefix byte) error {
+	if prefix == 0 {
+		return nil
+	}
+	if *current != 0 && *current != prefix {
+		return ErrMixedPrefix
+	}
+	*current = prefix
+	return nil
+}
+
 func toSnakeCase(s string) string {
 	runes := []rune(s)
 	var result []rune

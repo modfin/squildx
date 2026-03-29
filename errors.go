@@ -12,4 +12,17 @@ var (
 	ErrMixedPrefix          = errors.New("squildx: mixed parameter prefixes (: and @) in the same query")
 	ErrHavingWithoutGroupBy = errors.New("squildx: HAVING requires a GROUP BY clause")
 	ErrNotAStruct           = errors.New("squildx: SelectObject requires a struct or pointer to struct")
+
+	ErrNoTable         = errors.New("squildx: INSERT requires a table (use Into)")
+	ErrNoInsertColumns = errors.New("squildx: INSERT requires at least one column")
+	ErrNoInsertValues  = errors.New("squildx: INSERT requires values, an object, or a SELECT subquery")
+	ErrValuesAndSelect = errors.New("squildx: INSERT cannot have both VALUES and a SELECT subquery")
+	ErrColumnMismatch  = errors.New("squildx: ValuesObject columns do not match previously set columns")
+
+	ErrDeleteNoTable = errors.New("squildx: DELETE requires a table (use From)")
+	ErrDeleteNoWhere = errors.New("squildx: DELETE requires at least one WHERE clause")
+
+	ErrUpdateNoTable = errors.New("squildx: UPDATE requires a table (use Table)")
+	ErrUpdateNoSet   = errors.New("squildx: UPDATE requires at least one SET clause")
+	ErrUpdateNoWhere = errors.New("squildx: UPDATE requires at least one WHERE clause")
 )

@@ -76,6 +76,60 @@ func collectColumns(t reflect.Type, table string, cols *[]string) {
 	}
 }
 
+func structValues(obj any) (Params, error) {
+	v := reflect.ValueOf(obj)
+	t := reflect.TypeOf(obj)
+	if t == nil {
+		return nil, ErrNotAStruct
+	}
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+		v = v.Elem()
+	}
+	if t.Kind() != reflect.Struct {
+		return nil, ErrNotAStruct
+	}
+
+	params := Params{}
+	collectValues(t, v, params)
+	return params, nil
+}
+
+func collectValues(t reflect.Type, v reflect.Value, params Params) {
+	for i := range t.NumField() {
+		f := t.Field(i)
+		if !f.IsExported() {
+			continue
+		}
+
+		ft := f.Type
+		fv := v.Field(i)
+		for ft.Kind() == reflect.Ptr {
+			if fv.IsNil() {
+				break
+			}
+			ft = ft.Elem()
+			fv = fv.Elem()
+		}
+
+		tagName := fieldTagName(f)
+		if tagName == "-" {
+			continue
+		}
+
+		if f.Anonymous && ft.Kind() == reflect.Struct && tagName == "" {
+			collectValues(ft, fv, params)
+			continue
+		}
+
+		name := tagName
+		if name == "" {
+			name = toSnakeCase(f.Name)
+		}
+		params[name] = fv.Interface()
+	}
+}
+
 func fieldTagName(f reflect.StructField) string {
 	for _, tag := range []string{"squildx", "db", "json"} {
 		v, ok := f.Tag.Lookup(tag)
